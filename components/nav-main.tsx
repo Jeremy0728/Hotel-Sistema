@@ -180,9 +180,14 @@ export function NavMain({ items }: { items: SidebarItem[] }) {
                         const isSubActive =
                           pathname === subItem.url ||
                           pathname.startsWith(subItem.url);
-                        const badgeValue = subItem.badgeKey
-                          ? badgeMap[subItem.badgeKey]
-                          : 0;
+                        const badgeKey =
+                          subItem.badgeKey &&
+                          (subItem.badgeKey === "checkins" ||
+                            subItem.badgeKey === "checkouts" ||
+                            subItem.badgeKey === "alerts")
+                            ? (subItem.badgeKey as BadgeKey)
+                            : null;
+                        const badgeValue = badgeKey ? badgeMap[badgeKey] : 0;
                         return (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton
