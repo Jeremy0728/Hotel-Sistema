@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -19,6 +19,7 @@ import type { Room, RoomStatus } from "@/types/hotel";
 import RoomCard from "./room-card";
 import RoomForm from "./room-form";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { RoomFormValues } from "@/lib/hotel-schemas";
 
 const statusOptions: { value: RoomStatus | "all"; label: string }[] = [
@@ -30,8 +31,17 @@ const statusOptions: { value: RoomStatus | "all"; label: string }[] = [
   { value: "out_of_service", label: "Fuera de servicio" },
 ];
 
+const validStatuses = new Set<RoomStatus>([
+  "available",
+  "occupied",
+  "cleaning",
+  "maintenance",
+  "out_of_service",
+]);
+
 export default function RoomsPage() {
   const { rooms, roomTypes, addRoom, updateRoom } = useHotelData();
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<RoomStatus | "all">("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -39,6 +49,31 @@ export default function RoomsPage() {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
+
+  const viewParam = searchParams.get("view");
+  const statusParam = searchParams.get("status");
+  const hasParamFilter = statusParam && validStatuses.has(statusParam as RoomStatus);
+
+  useEffect(() => {
+    const isHousekeeping = viewParam === "housekeeping";
+    if (hasParamFilter) {
+      setStatusFilter(statusParam as RoomStatus);
+      return;
+    }
+
+    if (isHousekeeping) {
+      setStatusFilter("cleaning");
+      setTypeFilter("all");
+      setFloorFilter("all");
+      setSearch("");
+      return;
+    }
+
+    setStatusFilter("all");
+    setTypeFilter("all");
+    setFloorFilter("all");
+    setSearch("");
+  }, [viewParam, statusParam, hasParamFilter]);
 
   const roomTypeOptions = useMemo(() => {
     const types = [...roomTypes.map((type) => type.name), ...rooms.map((room) => room.type)];
@@ -122,6 +157,17 @@ export default function RoomsPage() {
             <Button onClick={handleOpenCreate}>Agregar habitacion</Button>
           </div>
         </div>
+
+        {hasParamFilter ? (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-neutral-200 dark:border-slate-700 px-3 py-2 text-sm">
+            <span className="text-neutral-600 dark:text-neutral-300">
+              Filtro activo: {statusOptions.find((opt) => opt.value === statusParam)?.label ?? "Estado"}
+            </span>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/rooms">Quitar filtro</Link>
+            </Button>
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <Input

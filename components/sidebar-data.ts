@@ -1,22 +1,54 @@
-﻿import { Building2, House } from "lucide-react";
+﻿import {
+  Banknote,
+  Building2,
+  LayoutDashboard,
+  Settings,
+  UserRound,
+} from "lucide-react";
 
 export const data = {
   navMain: [
     {
       title: "Dashboard",
+      url: "/dashboard",
+      icon: LayoutDashboard,
+      isActive: true,
+    },
+    {
+      title: "Recepción",
       url: "#",
-      icon: House,
+      icon: UserRound,
       isActive: true,
       items: [
         {
-          title: "Hotel",
-          url: "/dashboard",
-          circleColor: "bg-primary",
+          title: "Reservas",
+          url: "/reservations",
+          circleColor: "bg-yellow-500",
+        },
+        {
+          title: "Check-in",
+          url: "/checkin",
+          circleColor: "bg-emerald-600",
+          badgeKey: "checkins",
+        },
+        {
+          title: "Check-out",
+          url: "/checkout",
+          circleColor: "bg-orange-500",
+          badgeKey: "checkouts",
+        },
+        {
+          title: "Huéspedes",
+          url: "/guests",
+          circleColor: "bg-blue-500",
+        },
+        {
+          title: "Alertas",
+          url: "/notification-alert",
+          circleColor: "bg-red-500",
+          badgeKey: "alerts",
         },
       ],
-    },
-    {
-      label: "Hotel",
     },
     {
       title: "Operaciones",
@@ -30,24 +62,9 @@ export const data = {
           circleColor: "bg-green-500",
         },
         {
-          title: "Tipos de habitacion",
-          url: "/room-types",
-          circleColor: "bg-emerald-500",
-        },
-        {
-          title: "Huéspedes",
-          url: "/guests",
-          circleColor: "bg-blue-500",
-        },
-        {
-          title: "Reservas",
-          url: "/reservations",
-          circleColor: "bg-yellow-500",
-        },
-        {
-          title: "Calendario",
-          url: "/reservations/calendar",
-          circleColor: "bg-cyan-500",
+          title: "Housekeeping",
+          url: "/housekeeping",
+          circleColor: "bg-amber-500",
         },
         {
           title: "Inventario",
@@ -55,9 +72,27 @@ export const data = {
           circleColor: "bg-purple-500",
         },
         {
-          title: "Punto de venta",
-          url: "/pos",
-          circleColor: "bg-amber-500",
+          title: "Servicios",
+          url: "/services",
+          circleColor: "bg-cyan-500",
+        },
+      ],
+    },
+    {
+      title: "Finanzas",
+      url: "#",
+      icon: Banknote,
+      isActive: true,
+      items: [
+        {
+          title: "Facturas",
+          url: "/invoices",
+          circleColor: "bg-emerald-600",
+        },
+        {
+          title: "Pagos",
+          url: "/payment-methods",
+          circleColor: "bg-yellow-500",
         },
         {
           title: "Ventas",
@@ -65,65 +100,37 @@ export const data = {
           circleColor: "bg-emerald-500",
         },
         {
-          title: "Servicios",
-          url: "/services",
-          circleColor: "bg-cyan-500",
-        },
-        {
-          title: "Agenda servicios",
-          url: "/services/schedule",
+          title: "Reportes",
+          url: "/analytics",
           circleColor: "bg-blue-500",
-        },
-        {
-          title: "Clientes corporativos",
-          url: "/corporate-clients",
-          circleColor: "bg-slate-600",
-        },
-        {
-          title: "Check-in",
-          url: "/checkin",
-          circleColor: "bg-emerald-600",
-        },
-        {
-          title: "Check-out",
-          url: "/checkout",
-          circleColor: "bg-orange-500",
         },
       ],
     },
     {
-      title: "Administracion",
+      title: "Admin",
       url: "#",
-      icon: Building2,
+      icon: Settings,
       isActive: true,
       items: [
         {
-          title: "Configuracion del hotel",
+          title: "HQ Super-admin",
+          url: "/hq",
+          circleColor: "bg-indigo-500",
+        },
+        {
+          title: "Usuarios",
+          url: "/users-list",
+          circleColor: "bg-slate-600",
+        },
+        {
+          title: "Roles",
+          url: "/roles",
+          circleColor: "bg-slate-500",
+        },
+        {
+          title: "Configuración",
           url: "/hotel-settings",
           circleColor: "bg-blue-500",
-        },
-        {
-          title: "Plan y modulos",
-          url: "/plan-modules",
-          circleColor: "bg-slate-600",
-        },
-      ],
-    },
-    {
-      title: "Finanzas",
-      url: "#",
-      icon: Building2,
-      isActive: true,
-      items: [
-        {
-          title: "Facturacion",
-          url: "/invoices",
-          circleColor: "bg-emerald-600",
-        },
-        {
-          title: "Metodos de pago",
-          url: "/payment-methods",
-          circleColor: "bg-yellow-500",
         },
       ],
     },

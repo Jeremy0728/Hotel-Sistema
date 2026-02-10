@@ -3,12 +3,14 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import Footer from "@/components/layout/footer";
 import Header from "@/components/layout/header";
+import MobileBottomNav from "@/components/layout/mobile-bottom-nav";
 import ThemeCustomizer from "@/components/theme-customizer/theme-customizer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { HotelDataProvider } from "@/contexts/HotelDataContext";
 import { ReactNode } from "react";
 import { Toaster } from "react-hot-toast";
+import { useHotelData } from "@/contexts/HotelDataContext";
 
 export function ClientRoot({
   defaultOpen,
@@ -31,15 +33,26 @@ export function ClientRoot({
             <SidebarInset>
               <Header />
             </SidebarInset>
-            <div className="dashboard-body bg-neutral-100 dark:bg-[#1e2734] md:p-6 p-4 flex-1">
-              {children}
-            </div>
+            <HotelScopedBody>{children}</HotelScopedBody>
             <Footer />
+            <MobileBottomNav />
           </main>
           <ThemeCustomizer />
           <Toaster position="top-center" reverseOrder={false} />
         </HotelDataProvider>
       </SidebarProvider>
     </ThemeProvider>
+  );
+}
+
+function HotelScopedBody({ children }: { children: ReactNode }) {
+  const { currentHotelId } = useHotelData();
+  return (
+    <div
+      key={currentHotelId}
+      className="dashboard-body bg-neutral-100 dark:bg-[#1e2734] md:p-6 p-4 pb-24 md:pb-6 flex-1"
+    >
+      {children}
+    </div>
   );
 }

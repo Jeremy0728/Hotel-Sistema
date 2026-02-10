@@ -1,9 +1,17 @@
-"use client";
+﻿"use client";
 
-import { createContext, ReactNode, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import type {
   CorporateClient,
   Guest,
+  Hotel,
   HotelSettings,
   InventoryItem,
   InventoryLocation,
@@ -28,6 +36,11 @@ import type {
 } from "@/types/hotel";
 
 interface HotelDataContextValue {
+  hotels: Hotel[];
+  currentHotelId: string;
+  setCurrentHotelId: (hotelId: string) => void;
+  scopeMode: "chain" | "hotel";
+  setScopeMode: (mode: "chain" | "hotel") => void;
   rooms: Room[];
   roomTypes: RoomType[];
   guests: Guest[];
@@ -127,6 +140,36 @@ function generateCode() {
 }
 
 export const HotelDataProvider = ({ children }: { children: ReactNode }) => {
+  const [scopeMode, setScopeMode] = useState<"chain" | "hotel">("hotel");
+  const [hotels] = useState<Hotel[]>(() => [
+    {
+      id: "hotel-aurora",
+      name: "Hotel Aurora",
+      chain: "Grupo Aurora",
+      city: "Lima",
+      country: "Perú",
+      status: "active",
+    },
+    {
+      id: "hotel-mar",
+      name: "Hotel Mar Azul",
+      chain: "Grupo Aurora",
+      city: "Trujillo",
+      country: "Perú",
+      status: "active",
+    },
+    {
+      id: "hotel-norte",
+      name: "Hotel Norte",
+      chain: "Grupo Aurora",
+      city: "Piura",
+      country: "Perú",
+      status: "inactive",
+    },
+  ]);
+  const [currentHotelId, setCurrentHotelId] = useState<string>(
+    hotels[0]?.id ?? "hotel-aurora"
+  );
   const today = new Date();
   const todayStr = toDateString(today);
   const tomorrowStr = toDateString(addDays(today, 1));
@@ -265,6 +308,7 @@ export const HotelDataProvider = ({ children }: { children: ReactNode }) => {
       code: "RSV-240101",
       guestId: "guest-1",
       guestName: "Carla Mendoza",
+      channel: "direct",
       additionalGuestIds: [],
       roomId: "room-102",
       roomNumber: "102",
@@ -282,7 +326,8 @@ export const HotelDataProvider = ({ children }: { children: ReactNode }) => {
       id: "res-2",
       code: "RSV-240102",
       guestId: "guest-2",
-      guestName: "Luis García",
+      guestName: "Luis GarcÃ­a",
+      channel: "ota",
       additionalGuestIds: [],
       roomId: "room-101",
       roomNumber: "101",
@@ -299,7 +344,8 @@ export const HotelDataProvider = ({ children }: { children: ReactNode }) => {
       id: "res-3",
       code: "RSV-240103",
       guestId: "guest-3",
-      guestName: "Mariana Ríos",
+      guestName: "Mariana RÃ­os",
+      channel: "corporate",
       additionalGuestIds: [],
       roomId: "room-201",
       roomNumber: "201",
@@ -584,6 +630,26 @@ export const HotelDataProvider = ({ children }: { children: ReactNode }) => {
     taxRate: 18,
     taxInclusive: true,
   }));
+
+  // Load persisted hotel context (per device)
+  useEffect(() => {
+    const storedHotel = localStorage.getItem("hotel_current_id");
+    const storedMode = localStorage.getItem("hotel_scope_mode");
+    if (storedHotel && hotels.some((hotel) => hotel.id === storedHotel)) {
+      setCurrentHotelId(storedHotel);
+    }
+    if (storedMode === "chain" || storedMode === "hotel") {
+      setScopeMode(storedMode);
+    }
+  }, [hotels]);
+
+  useEffect(() => {
+    localStorage.setItem("hotel_current_id", currentHotelId);
+  }, [currentHotelId]);
+
+  useEffect(() => {
+    localStorage.setItem("hotel_scope_mode", scopeMode);
+  }, [scopeMode]);
 
   const [planInfo] = useState<PlanInfo>(() => ({
     name: "Plan Pro",
@@ -1055,6 +1121,11 @@ export const HotelDataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const value = {
+    hotels,
+    currentHotelId,
+    setCurrentHotelId,
+    scopeMode,
+    setScopeMode,
     rooms,
     roomTypes,
     guests,
@@ -1119,3 +1190,5 @@ export const useHotelData = () => {
   }
   return context;
 };
+
+

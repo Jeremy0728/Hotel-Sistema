@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   Collapsible,
@@ -7,38 +7,125 @@ import {
 } from "@/components/ui/collapsible";
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarInput,
 } from "@/components/ui/sidebar";
+import { useHotelData } from "@/contexts/HotelDataContext";
 import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed";
 import { cn } from "@/lib/utils";
 import { ChevronRight, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+type BadgeKey = "checkins" | "checkouts" | "alerts";
+
+interface SidebarSubItem {
+  title: string;
+  url: string;
+  circleColor: string;
+  badgeKey?: BadgeKey;
+}
 
 interface SidebarItem {
   title?: string;
   url?: string;
   icon?: LucideIcon;
   isActive?: boolean;
-  items?: {
-    title: string;
-    url: string;
-    circleColor: string;
-  }[];
+  items?: SidebarSubItem[];
   label?: string;
-};
+}
 
 export function NavMain({ items }: { items: SidebarItem[] }) {
   const pathname = usePathname();
   const isCollapsed = useSidebarCollapsed();
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const { rooms, reservations, invoices } = useHotelData();
+
+  const todayStr = new Date().toISOString().split("T")[0];
+  const checkInsCount = reservations.filter(
+    (reservation) =>
+      reservation.checkIn === todayStr &&
+      (reservation.status === "pending" || reservation.status === "confirmed")
+  ).length;
+  const checkOutsCount = reservations.filter(
+    (reservation) =>
+      reservation.checkOut === todayStr && reservation.status === "checkin"
+  ).length;
+  const unpaidReservations = invoices.filter((invoice) => invoice.balance > 0)
+    .length;
+  const cleaningRooms = rooms.filter((room) => room.status === "cleaning").length;
+  const overbookingRisk = Math.max(
+    0,
+    checkInsCount - rooms.filter((room) => room.status === "available").length
+  );
+  const alertCount = [
+    unpaidReservations > 0,
+    cleaningRooms > 0,
+    overbookingRisk > 0,
+  ].filter(Boolean).length;
+
+  const badgeMap: Record<BadgeKey, number> = {
+    checkins: checkInsCount,
+    checkouts: checkOutsCount,
+    alerts: alertCount,
+  };
+
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const filteredItems = useMemo(() => {
+    if (!normalizedQuery) return items;
+
+    return items
+      .map((item) => {
+        if (item.items && item.items.length > 0) {
+          const titleMatches = item.title
+            ? item.title.toLowerCase().includes(normalizedQuery)
+            : false;
+          if (titleMatches) return item;
+
+          const filteredSub = item.items.filter((subItem) =>
+            subItem.title.toLowerCase().includes(normalizedQuery)
+          );
+          if (filteredSub.length === 0) return null;
+          return { ...item, items: filteredSub };
+        }
+
+        if (item.label) return null;
+
+        const titleMatches = item.title
+          ? item.title.toLowerCase().includes(normalizedQuery)
+          : false;
+        return titleMatches ? item : null;
+      })
+      .filter(Boolean) as SidebarItem[];
+  }, [items, normalizedQuery]);
+
+  useEffect(() => {
+    const activeGroup = filteredItems.find((item) =>
+      item.items?.some(
+        (subItem) => pathname === subItem.url || pathname.startsWith(subItem.url)
+      )
+    );
+
+    if (activeGroup?.title) {
+      setOpenGroup(activeGroup.title);
+      return;
+    }
+
+    if (normalizedQuery) {
+      const firstGroup = filteredItems.find((item) => item.items?.length);
+      if (firstGroup?.title) {
+        setOpenGroup(firstGroup.title);
+      }
+    }
+  }, [filteredItems, normalizedQuery, pathname]);
 
   const handleToggleGroup = (title?: string) => {
     if (!title) return;
@@ -47,11 +134,17 @@ export function NavMain({ items }: { items: SidebarItem[] }) {
 
   return (
     <SidebarGroup className={`${isCollapsed ? "px-1.5" : ""}`}>
+      <div className="px-2 pb-2 group-data-[collapsible=icon]:hidden">
+        <SidebarInput
+          placeholder="Buscar en menú"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+      </div>
       <SidebarMenu>
-        {items.map((item) => {
+        {filteredItems.map((item) => {
           const isGroupActive = item.items?.some(
-            (subItem) =>
-              pathname === subItem.url || pathname.startsWith(subItem.url)
+            (subItem) => pathname === subItem.url || pathname.startsWith(subItem.url)
           );
 
           if (item.items && item.items.length > 0) {
@@ -87,6 +180,9 @@ export function NavMain({ items }: { items: SidebarItem[] }) {
                         const isSubActive =
                           pathname === subItem.url ||
                           pathname.startsWith(subItem.url);
+                        const badgeValue = subItem.badgeKey
+                          ? badgeMap[subItem.badgeKey]
+                          : 0;
                         return (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton
@@ -106,6 +202,11 @@ export function NavMain({ items }: { items: SidebarItem[] }) {
                                   className={`w-2 h-2 rounded-[50%] ${subItem.circleColor}`}
                                 ></span>
                                 <span>{subItem.title}</span>
+                                {badgeValue > 0 ? (
+                                  <span className="ml-auto rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                                    {badgeValue}
+                                  </span>
+                                ) : null}
                               </Link>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
@@ -119,11 +220,7 @@ export function NavMain({ items }: { items: SidebarItem[] }) {
           }
 
           if (item.label) {
-            return (
-              <SidebarGroupLabel key={`label-${item.label}`}>
-                {item.label}
-              </SidebarGroupLabel>
-            );
+            return null;
           }
 
           if (item.url && item.title) {

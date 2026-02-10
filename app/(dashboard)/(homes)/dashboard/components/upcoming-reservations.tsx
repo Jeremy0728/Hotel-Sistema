@@ -1,9 +1,26 @@
-"use client";
+﻿"use client";
 
 import { Card } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useHotelData } from "@/contexts/HotelDataContext";
 import StatusBadge from "@/components/hotel/status-badge";
+import { MoreHorizontal } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 function formatDate(dateStr: string) {
   const date = new Date(`${dateStr}T00:00:00`);
@@ -14,7 +31,8 @@ function formatDate(dateStr: string) {
 }
 
 export default function UpcomingReservations() {
-  const { reservations } = useHotelData();
+  const { reservations, updateReservation, completeCheckIn } = useHotelData();
+  const router = useRouter();
   const todayStr = new Date().toISOString().split("T")[0];
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -46,11 +64,16 @@ export default function UpcomingReservations() {
               <TableHead>Check-in</TableHead>
               <TableHead>Check-out</TableHead>
               <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {upcoming.map((reservation) => (
-              <TableRow key={reservation.id}>
+              <TableRow
+                key={reservation.id}
+                className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                onClick={() => router.push(`/reservations/${reservation.id}`)}
+              >
                 <TableCell className="font-medium">
                   {reservation.guestName}
                 </TableCell>
@@ -60,11 +83,46 @@ export default function UpcomingReservations() {
                 <TableCell>
                   <StatusBadge type="reservation" status={reservation.status} />
                 </TableCell>
+                <TableCell
+                  className="text-right"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="ghost" aria-label="Acciones">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => router.push(`/reservations/${reservation.id}`)}
+                      >
+                        Ver detalle
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => completeCheckIn(reservation.id)}
+                        disabled={reservation.status !== "confirmed"}
+                      >
+                        Check-in
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => updateReservation(reservation.id, { status: "cancelled" })}
+                        disabled={reservation.status === "cancelled"}
+                      >
+                        Cancelar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => router.push("/invoices")}>
+                        Cobrar
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
               </TableRow>
             ))}
             {upcoming.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-sm text-neutral-500 dark:text-neutral-300">
+                <TableCell colSpan={6} className="text-center text-sm text-neutral-500 dark:text-neutral-300">
                   No hay reservas próximas.
                 </TableCell>
               </TableRow>
@@ -75,7 +133,11 @@ export default function UpcomingReservations() {
 
       <div className="grid gap-3 md:hidden">
         {upcoming.map((reservation) => (
-          <Card key={reservation.id} className="p-4 border border-neutral-200 dark:border-slate-700">
+          <Card
+            key={reservation.id}
+            className="p-4 border border-neutral-200 dark:border-slate-700 cursor-pointer"
+            onClick={() => router.push(`/reservations/${reservation.id}`)}
+          >
             <div className="flex items-center justify-between">
               <p className="font-semibold">{reservation.guestName}</p>
               <StatusBadge type="reservation" status={reservation.status} />
@@ -85,6 +147,38 @@ export default function UpcomingReservations() {
             </p>
             <div className="text-xs text-neutral-500 dark:text-neutral-300 mt-2">
               {formatDate(reservation.checkIn)} → {formatDate(reservation.checkOut)}
+            </div>
+            <div className="mt-3 flex justify-end" onClick={(event) => event.stopPropagation()}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="ghost">
+                    Acciones
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => router.push(`/reservations/${reservation.id}`)}
+                  >
+                    Ver detalle
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => completeCheckIn(reservation.id)}
+                    disabled={reservation.status !== "confirmed"}
+                  >
+                    Check-in
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => updateReservation(reservation.id, { status: "cancelled" })}
+                    disabled={reservation.status === "cancelled"}
+                  >
+                    Cancelar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/invoices")}>
+                    Cobrar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </Card>
         ))}

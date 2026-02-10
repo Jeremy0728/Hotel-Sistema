@@ -64,6 +64,7 @@ export interface Reservation {
   code: string;
   guestId: string;
   guestName: string;
+  channel?: "direct" | "ota" | "corporate";
   additionalGuestIds?: string[];
   roomId: string;
   roomNumber: string;
@@ -268,4 +269,13 @@ export interface PlanModule {
   description: string;
   status: "active" | "available" | "unavailable";
   requiredPlan?: string;
+}
+
+export interface Hotel {
+  id: string;
+  name: string;
+  chain: string;
+  city?: string;
+  country?: string;
+  status?: "active" | "inactive";
 }
