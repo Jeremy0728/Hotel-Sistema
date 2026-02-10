@@ -266,8 +266,6 @@ export const HotelDataProvider = ({ children }: { children: ReactNode }) => {
       country: "Perú",
       preferences: {
         alergias: ["nueces"],
-      },
-      preferences: {
         almohada: "suave",
         minibar: true,
       },
