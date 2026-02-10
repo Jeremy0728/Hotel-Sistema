@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import LanguageSelect from "../shared/language-select";
 import MessageDropdown from "../shared/message-dropdown";
@@ -54,12 +54,16 @@ const Header = () => {
 
   return (
     <header className="dashboard-header flex flex-col gap-2 shrink-0 md:px-6 px-4 py-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-18 dark:bg-[#273142]">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
           <SidebarTrigger className="-ms-1 p-0 size-[unset] cursor-pointer" />
           <HotelSwitcher />
-          <SearchBox />
-          <div className="hidden lg:flex items-center gap-2">
+          <div className="flex-1 min-w-[220px]">
+            <SearchBox />
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="hidden xl:flex items-center gap-2">
             <Button size="sm" asChild>
               <Link href="/reservations/new">
                 <CalendarPlus className="h-4 w-4 mr-1" />
@@ -85,8 +89,6 @@ const Header = () => {
               </Link>
             </Button>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
           <ModeToggle />
           <LanguageSelect />
           <MessageDropdown />
@@ -95,7 +97,14 @@ const Header = () => {
         </div>
       </div>
       <div className="text-xs text-neutral-500 dark:text-neutral-300 flex flex-wrap items-center gap-2">
-        <span className={cn("rounded-full border px-2 py-0.5 text-[11px]", scopeMode === "chain" ? "border-blue-200 text-blue-600" : "border-emerald-200 text-emerald-600")}>
+        <span
+          className={cn(
+            "rounded-full border px-2 py-0.5 text-[11px]",
+            scopeMode === "chain"
+              ? "border-blue-200 text-blue-600"
+              : "border-emerald-200 text-emerald-600"
+          )}
+        >
           {scopeLabel}
         </span>
         <span>{chainLabel}</span>
