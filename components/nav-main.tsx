@@ -29,7 +29,7 @@ interface SidebarSubItem {
   title: string;
   url: string;
   circleColor: string;
-  badgeKey?: BadgeKey;
+  badgeKey?: BadgeKey | string;
 }
 
 interface SidebarItem {
