@@ -18,7 +18,7 @@
     "jsx": "react-jsx",
     "incremental": true,
     "typeRoots": [
-      "./types",
+      "./src/types",
       "./node_modules/@types"
     ],
     "plugins": [
@@ -28,7 +28,7 @@
     ],
     "paths": {
       "@/*": [
-        "./*"
+        "./src/*"
       ]
     }
   },
