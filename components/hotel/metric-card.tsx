@@ -34,7 +34,7 @@ export default function MetricCard({
       )}
     >
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-neutral-500 dark:text-neutral-300">
+        <p className="text-base sm:text-sm font-medium text-neutral-500 dark:text-neutral-300">
           {title}
         </p>
         {Icon ? (
@@ -48,17 +48,19 @@ export default function MetricCard({
           </span>
         ) : null}
       </div>
-      <div className="text-2xl font-semibold">{value}</div>
+      <div className="text-3xl sm:text-2xl font-semibold">{value}</div>
       {description ? (
-        <p className="text-xs text-neutral-500 dark:text-neutral-300">
+        <p className="text-sm sm:text-xs text-neutral-500 dark:text-neutral-300">
           {description}
         </p>
       ) : null}
       {trend ? (
-        <p className="text-xs font-medium text-emerald-600">{trend}</p>
+        <p className="text-sm sm:text-xs font-medium text-emerald-600">
+          {trend}
+        </p>
       ) : null}
       {actionLabel ? (
-        <span className="text-xs font-semibold text-primary">
+        <span className="text-sm sm:text-xs font-semibold text-primary">
           {actionLabel}
         </span>
       ) : null}

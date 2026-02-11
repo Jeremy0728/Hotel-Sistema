@@ -1,5 +1,5 @@
 import { LoadingProvider } from "@/contexts/LoadingContext";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 const inter = Inter({
@@ -33,6 +33,12 @@ export const metadata: Metadata = {
     description: "A modern, responsive admin dashboard template built with Next.js, Tailwind CSS, and ShadCN UI.",
     images: ["https://wowdash-nextjs-typescript-shadcn-5fu5.vercel.app/og-image.jpg"],
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 

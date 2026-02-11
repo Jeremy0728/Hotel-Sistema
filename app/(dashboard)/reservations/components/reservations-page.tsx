@@ -166,7 +166,7 @@ export default function ReservationsPage() {
 
   return (
     <div className="space-y-6">
-      <Card className="p-4 flex flex-col gap-4 sticky top-4 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur">
+      <Card className="p-4 flex flex-col gap-4 md:sticky md:top-4 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur">
         <div className="flex flex-col lg:flex-row lg:items-center gap-3 justify-between">
           <div>
             <h2 className="text-lg font-semibold">Reservas</h2>

@@ -136,15 +136,15 @@ const SearchBox = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <div className="relative sm:max-w-[388px] w-full cursor-pointer">
+        <div className="relative min-w-0 w-full sm:max-w-[388px] cursor-pointer">
           <Input
             className={cn(
-              "bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 shadow-none focus-visible:ring-0 focus-visible:border-primary border border-slate-300 h-10 pe-16 ps-11 w-full cursor-pointer disabled:opacity-[1] dark:border-slate-600 sm:block hidden"
+              "bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 shadow-none focus-visible:ring-0 focus-visible:border-primary border border-slate-300 h-11 sm:h-10 pe-16 ps-11 w-full cursor-pointer disabled:opacity-[1] dark:border-slate-600"
             )}
             placeholder="Buscar..."
             disabled
           />
-          <span className="sm:absolute sm:top-[50%] sm:start-0 sm:ms-4 sm:-translate-y-[50%]">
+          <span className="absolute top-1/2 start-0 ms-4 -translate-y-1/2">
             <Search className="text-neutral-500 dark:text-white" width={18} height={18} />
           </span>
           <span className="hidden sm:flex items-center gap-1 absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-neutral-500 dark:text-neutral-300 border border-neutral-200 dark:border-slate-600 rounded px-1.5 py-0.5">

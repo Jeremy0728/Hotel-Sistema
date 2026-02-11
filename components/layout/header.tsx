@@ -53,16 +53,27 @@ const Header = () => {
   const subLabel = active?.sub;
 
   return (
-    <header className="dashboard-header flex flex-col gap-2 shrink-0 md:px-6 px-4 py-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-18 dark:bg-[#273142]">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <SidebarTrigger className="-ms-1 p-0 size-[unset] cursor-pointer" />
-          <HotelSwitcher />
-          <div className="flex-1 min-w-[220px]">
-            <SearchBox />
+    <header className="dashboard-header relative z-30 flex w-full max-w-full flex-col gap-3 shrink-0 border-b border-neutral-200 bg-white px-3 py-3 transition-[width,height] ease-linear dark:border-slate-700 dark:bg-[#273142] sm:px-4 md:px-6 group-has-data-[collapsible=icon]/sidebar-wrapper:h-18">
+      <div className="flex w-full min-w-0 flex-col gap-3">
+        <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-2 sm:flex-nowrap">
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+            <SidebarTrigger className="-ms-1 p-0 size-[unset] cursor-pointer" />
+            <HotelSwitcher />
+          </div>
+          <div className="flex max-w-full items-center gap-2 shrink-0">
+            <div className="hidden md:flex items-center gap-2">
+              <ModeToggle />
+              <LanguageSelect />
+              <MessageDropdown />
+            </div>
+            <NotificationDropdown />
+            <ProfileDropdown />
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex w-full min-w-0 items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <SearchBox />
+          </div>
           <div className="hidden xl:flex items-center gap-2">
             <Button size="sm" asChild>
               <Link href="/reservations/new">
@@ -89,35 +100,32 @@ const Header = () => {
               </Link>
             </Button>
           </div>
-          <ModeToggle />
-          <LanguageSelect />
-          <MessageDropdown />
-          <NotificationDropdown />
-          <ProfileDropdown />
         </div>
-      </div>
-      <div className="text-xs text-neutral-500 dark:text-neutral-300 flex flex-wrap items-center gap-2">
-        <span
-          className={cn(
-            "rounded-full border px-2 py-0.5 text-[11px]",
-            scopeMode === "chain"
-              ? "border-blue-200 text-blue-600"
-              : "border-emerald-200 text-emerald-600"
-          )}
-        >
-          {scopeLabel}
-        </span>
-        <span>{chainLabel}</span>
-        <span className="text-neutral-400">›</span>
-        <span>{hotelLabel}</span>
-        <span className="text-neutral-400">›</span>
-        <span>{moduleLabel}</span>
-        {subLabel ? (
-          <>
+        <div className="hidden xl:block">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] leading-5 text-neutral-500 dark:text-neutral-300">
+            <span
+              className={cn(
+                "rounded-full border px-2 py-0.5 text-[11px]",
+                scopeMode === "chain"
+                  ? "border-blue-200 text-blue-600"
+                  : "border-emerald-200 text-emerald-600"
+              )}
+            >
+              {scopeLabel}
+            </span>
+            <span>{chainLabel}</span>
             <span className="text-neutral-400">›</span>
-            <span>{subLabel}</span>
-          </>
-        ) : null}
+            <span>{hotelLabel}</span>
+            <span className="text-neutral-400">›</span>
+            <span>{moduleLabel}</span>
+            {subLabel ? (
+              <>
+                <span className="text-neutral-400">›</span>
+                <span>{subLabel}</span>
+              </>
+            ) : null}
+          </div>
+        </div>
       </div>
     </header>
   );

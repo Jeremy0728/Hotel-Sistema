@@ -35,16 +35,19 @@ export default function HotelSwitcher() {
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className="h-10 gap-2 px-3 text-left text-sm font-medium"
+          className="h-10 min-w-0 gap-2 px-2.5 text-left text-sm font-medium max-w-[150px] sm:max-w-[220px] md:max-w-none"
         >
           <Building2 className="h-4 w-4 text-neutral-500" />
-          <span className="hidden sm:inline">
+          <span className="truncate">
             {currentHotel?.name ?? "Seleccionar hotel"}
           </span>
           <ChevronsUpDown className="h-4 w-4 text-neutral-400" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[320px] p-2" align="start">
+      <PopoverContent
+        className="w-[min(320px,calc(100vw-1.5rem))] p-2"
+        align="start"
+      >
         <div className="flex items-center gap-2 mb-2">
           {modes.map((mode) => (
             <Button
