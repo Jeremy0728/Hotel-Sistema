@@ -256,7 +256,7 @@ export default function HotelDashboard() {
     if (snapshot.departureReservation) {
       return {
         label: "Check-out rapido",
-        execute: () => completeCheckOut(snapshot.departureReservation.id),
+        execute: () => completeCheckOut(snapshot.departureReservation!.id),
       };
     }
 
@@ -276,7 +276,7 @@ export default function HotelDashboard() {
 
     return {
       label: "Detalle",
-      execute: () => router.push(`/recepcion/habitaciones?floor=${selectedFloor}`),
+      execute: () => router.push(`/rooms?floor=${selectedFloor}`),
     };
   };
 
@@ -378,7 +378,7 @@ export default function HotelDashboard() {
               description="Capacidad actual"
               trend={`${Math.round((availableRooms / Math.max(totalRooms, 1)) * 100)}% del total`}
               actionLabel="Ver habitaciones"
-              href="/recepcion/habitaciones?status=available"
+              href="/rooms?status=available"
               icon={CircleCheck}
               accentClassName="bg-emerald-100 text-emerald-600"
             />
@@ -388,7 +388,7 @@ export default function HotelDashboard() {
               description="En este momento"
               trend={`${Math.round((occupiedRooms / Math.max(totalRooms, 1)) * 100)}% del total`}
               actionLabel="Ver ocupadas"
-              href="/recepcion/habitaciones?status=occupied"
+              href="/rooms?status=occupied"
               icon={BedDouble}
               accentClassName="bg-red-100 text-red-600"
             />
@@ -423,7 +423,7 @@ export default function HotelDashboard() {
                 </p>
               </div>
               <Button size="sm" variant="outline" asChild>
-                <Link href="/recepcion/habitaciones">Abrir vista completa</Link>
+                <Link href="/rooms">Abrir vista completa</Link>
               </Button>
             </div>
 
@@ -515,9 +515,7 @@ export default function HotelDashboard() {
                       hasPendingPayment={snapshot.hasPendingPayment}
                       hasAlert={snapshot.hasAlert}
                       quickLabel={action.label}
-                      onView={() =>
-                        router.push(`/recepcion/habitaciones?floor=${selectedFloor}`)
-                      }
+                      onView={() => router.push(`/rooms?floor=${selectedFloor}`)}
                       onQuick={action.execute}
                     />
                   );
@@ -636,7 +634,7 @@ export default function HotelDashboard() {
 
           <UpcomingReservations />
 
-          <OccupancyChartCard />
+          <OccupancyChartCard compact />
         </div>
 
         <div className="xl:col-span-4">

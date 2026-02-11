@@ -1,19 +1,18 @@
 import CommonLink from "@/components/shared/common-link";
 import { Card, CardContent } from '@/components/ui/card';
-import { default as userImage1, default as userImage6 } from "/assets/images/users/user1.png";
 
 
 
 
 import { Star } from "lucide-react";
-import Image, { StaticImageData } from "next/image";
+import Image from "next/image";
 import React from "react";
 
 interface Instructor {
     id: number;
     name: string;
     agentId: string;
-    image: StaticImageData;
+    image: string;
     reviews: number;
     rating: number;
 }
@@ -23,7 +22,7 @@ const instructors: Instructor[] = [
         id: 1,
         name: "Dianne Russell",
         agentId: "36254",
-        image: userImage1,
+        image: "/assets/images/users/user1.png",
         reviews: 25,
         rating: 5,
     },
@@ -63,7 +62,7 @@ const instructors: Instructor[] = [
         id: 6,
         name: "Arlene McCoy",
         agentId: "36254",
-        image: userImage6,
+        image: "/assets/images/users/user6.png",
         reviews: 25,
         rating: 5,
     },
