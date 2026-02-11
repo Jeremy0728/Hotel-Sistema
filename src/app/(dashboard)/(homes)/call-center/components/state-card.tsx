@@ -6,7 +6,7 @@ import ServiceLevelRadialProgress from "./service-level-radial-progress";
 
 
 interface StatItem {
-    icon: StaticImageData;
+    icon: string | StaticImageData;
     title: string;
     value: number;
     subtitle: string;
@@ -88,3 +88,4 @@ const StateCard = () => {
 };
 
 export default StateCard;
+

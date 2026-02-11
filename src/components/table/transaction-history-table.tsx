@@ -24,7 +24,7 @@ interface TransactionsDataType {
     transactionId: string,
     amount: string,
     paymentMethod: string,
-    image: StaticImageData;
+    image: string | StaticImageData;
     date: string;
     status: "Active" | "Inactive";
     statusVariant:
@@ -252,3 +252,4 @@ const TransactionHistoryTable = () => {
 };
 
 export default TransactionHistoryTable;
+

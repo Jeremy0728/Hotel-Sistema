@@ -18,7 +18,7 @@ import Image, { StaticImageData } from "next/image";
 import { Badge } from "../ui/badge";
 
 interface AssetOrder {
-  image: StaticImageData;
+  image: string | StaticImageData;
   name: string;
   subText: string;
   quantity: string;
@@ -175,3 +175,4 @@ const LatestInvestmentsTable = () => {
 };
 
 export default LatestInvestmentsTable;
+

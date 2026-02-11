@@ -11,7 +11,7 @@ import Image, { StaticImageData } from "next/image";
 
 
 interface TreatmentItem {
-    icon: StaticImageData;
+    icon: string | StaticImageData;
     bgColor: string;
     title: string;
     doctors: string;
@@ -117,3 +117,4 @@ const AvailableTreatmentsCard = () => {
 };
 
 export default AvailableTreatmentsCard;
+

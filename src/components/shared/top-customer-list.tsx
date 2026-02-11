@@ -10,7 +10,7 @@ import Image, { StaticImageData } from "next/image";
 export interface TopPerformer {
   id: number;
   name: string;
-  image: StaticImageData;
+  image: string | StaticImageData;
   phone: string;
   order: string;
 }
@@ -92,3 +92,4 @@ const TopCustomerList = () => {
 };
 
 export default TopCustomerList;
+

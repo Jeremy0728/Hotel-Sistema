@@ -19,7 +19,7 @@ interface TeamMember {
   id: number;
   name: string;
   email: string;
-  avatar: StaticImageData;
+  avatar: string | StaticImageData;
   taskCount: number;
   progress: number;
   progressColor: string;
@@ -153,3 +153,4 @@ const TransactionHistorySassTable = () => {
 };
 
 export default TransactionHistorySassTable;
+

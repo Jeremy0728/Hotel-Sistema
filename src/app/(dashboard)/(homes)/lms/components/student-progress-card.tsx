@@ -14,7 +14,7 @@ type Student = {
     id: number;
     name: string;
     course: string;
-    image: StaticImageData;
+    image: string | StaticImageData;
     progress: number;
 };
 
@@ -154,3 +154,4 @@ const StudentProgressCard: React.FC = () => {
 };
 
 export default StudentProgressCard;
+

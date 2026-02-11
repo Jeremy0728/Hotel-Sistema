@@ -17,7 +17,7 @@ interface Category {
     id: number;
     title: string;
     courses: string;
-    icon: StaticImageData;
+    icon: string | StaticImageData;
     bgColor: string;
 }
 
@@ -118,3 +118,4 @@ const TopCategoriesCard: React.FC = () => {
 };
 
 export default TopCategoriesCard;
+

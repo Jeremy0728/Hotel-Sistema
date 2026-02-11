@@ -8,17 +8,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { default as cryptoImage1, default as cryptoImage6 } from "/assets/images/currency/crypto-img1.png";
-
-
-
-
-import Image, { StaticImageData } from "next/image";
+import Image from "next/image";
 
 interface MarketItem {
   id: string;
   name: string;
-  image: StaticImageData;
+  image: string;
   price: string;
   change: string;
   changeType: "positive" | "negative";
@@ -29,7 +24,7 @@ const marketData: MarketItem[] = [
   {
     id: "bitcoin",
     name: "Bitcoin",
-    image: cryptoImage1,
+    image: "/assets/images/currency/crypto-img1.png",
     price: "$55,000.00",
     change: "+3.85%",
     changeType: "positive",
@@ -74,7 +69,7 @@ const marketData: MarketItem[] = [
   {
     id: "crypto",
     name: "Crypto",
-    image: cryptoImage6,
+    image: "/assets/images/currency/crypto-img6.png",
     price: "$15,000.00",
     change: "-2.85%",
     changeType: "negative",

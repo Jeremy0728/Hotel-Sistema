@@ -15,7 +15,7 @@ interface DocumentItem {
     id: number;
     name: string;
     size: string;
-    icon: StaticImageData;
+    icon: string | StaticImageData;
 }
 
 const initialDocuments: DocumentItem[] = [
@@ -124,3 +124,4 @@ const HealthReportsDocumentCard: React.FC = () => {
 };
 
 export default HealthReportsDocumentCard;
+

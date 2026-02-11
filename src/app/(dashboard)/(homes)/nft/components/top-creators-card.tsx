@@ -16,7 +16,7 @@ interface Creator {
     id: number;
     name: string;
     username: string;
-    avatar: StaticImageData;
+    avatar: string | StaticImageData;
 }
 
 const creatorsData: Creator[] = [
@@ -90,3 +90,4 @@ const TopCreatorsCard: React.FC = () => {
 };
 
 export default TopCreatorsCard;
+

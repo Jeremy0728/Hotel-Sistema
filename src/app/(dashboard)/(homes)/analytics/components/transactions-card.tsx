@@ -15,7 +15,7 @@ interface Transaction {
     title: string;
     subtitle: string;
     amount: string;
-    icon: StaticImageData;
+    icon: string | StaticImageData;
     bgColor: string; // Tailwind class for bg
 }
 
@@ -97,3 +97,4 @@ const TransactionsCard = () => {
 };
 
 export default TransactionsCard;
+

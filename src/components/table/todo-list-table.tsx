@@ -21,7 +21,7 @@ interface ActivityStatus {
 interface todoListTypeItem {
     id: string;
     duration: string;
-    amount: StaticImageData;
+    amount: string | StaticImageData;
     date: string;
     priority: string;
     status: ActivityStatus;
@@ -150,3 +150,4 @@ const TodoListTable = () => {
 };
 
 export default TodoListTable;
+

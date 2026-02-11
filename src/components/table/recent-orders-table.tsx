@@ -16,7 +16,7 @@ import Image, { StaticImageData } from "next/image";
 import { Badge } from "../ui/badge";
 
 interface Order {
-  userImage: StaticImageData;
+  userImage: string | StaticImageData;
   userName: string;
   invoice: string;
   item: string;
@@ -185,3 +185,4 @@ const RecentOrdersTable = () => {
 };
 
 export default RecentOrdersTable;
+

@@ -17,8 +17,8 @@ import React from "react";
 type NftCard = {
     id: number;
     title: string;
-    nftImage: StaticImageData;
-    userImage: StaticImageData;
+    nftImage: string | StaticImageData;
+    userImage: string | StaticImageData;
     userName: string;
     priceEth: string;
     priceUsd: string;
@@ -153,3 +153,4 @@ const TrendingNftWidgets: React.FC<TrendingNftWidgetsProps> = ({ category }) => 
 };
 
 export default TrendingNftWidgets;
+

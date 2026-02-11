@@ -13,7 +13,7 @@ interface SourceVisitor {
     id: number;
     title: string;
     percentage: number;
-    icon: StaticImageData;
+    icon: string | StaticImageData;
     bgColor: string; // Tailwind classes for gradient background
     iconBg: string; // Tailwind classes for circle bg
 }
@@ -104,3 +104,4 @@ const SourceVisitorsCard = () => {
 };
 
 export default SourceVisitorsCard;
+

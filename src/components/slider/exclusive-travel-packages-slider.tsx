@@ -13,7 +13,7 @@ import Image, { StaticImageData } from "next/image";
 
 interface ExclusiveTravelPackagesSliders {
     id: number;
-    image: StaticImageData;
+    image: string | StaticImageData;
     title: string;
     duration: string;
     price: string;
@@ -110,3 +110,4 @@ function ExclusiveTravelPackagesSlider() {
 }
 
 export default ExclusiveTravelPackagesSlider;
+

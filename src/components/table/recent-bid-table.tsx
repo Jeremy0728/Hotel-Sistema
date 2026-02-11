@@ -31,12 +31,12 @@ import { Button } from "../ui/button";
 
 
 interface BidItem {
-    itemImage: StaticImageData;
+    itemImage: string | StaticImageData;
     itemTitle: string;
     itemOwner: string;
     price: string;
     yourOffer: string;
-    recentOfferImage: StaticImageData;
+    recentOfferImage: string | StaticImageData;
     recentOfferPrice: string;
     timeLeft: string;
 }
@@ -230,3 +230,4 @@ const RecentBidTable = () => {
 };
 
 export default RecentBidTable;
+

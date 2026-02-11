@@ -11,7 +11,7 @@ interface NoticeItem {
   name: string;
   message: string;
   date: string;
-  image: StaticImageData;
+  image: string | StaticImageData;
 };
 
 const noticeData: NoticeItem[] = [
@@ -69,3 +69,4 @@ const NoticeBoardList = () => {
 };
 
 export default NoticeBoardList;
+

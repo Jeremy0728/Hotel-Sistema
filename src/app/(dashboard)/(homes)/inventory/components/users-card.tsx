@@ -12,7 +12,7 @@ interface UserData {
     name: string;
     role: string;
     status: "Active" | "Pending" | "Inactive";
-    image: StaticImageData;
+    image: string | StaticImageData;
 }
 
 const usersData: UserData[] = [
@@ -103,3 +103,4 @@ const UsersCard: React.FC = () => {
 };
 
 export default UsersCard;
+

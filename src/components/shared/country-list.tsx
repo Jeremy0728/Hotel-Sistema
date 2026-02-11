@@ -10,7 +10,7 @@ export interface Country {
   name: string;
   users: string;
   percent: number;
-  flag: StaticImageData;
+  flag: string | StaticImageData;
   color: string;
 }
 
@@ -93,3 +93,4 @@ const CountryList = () => {
 };
 
 export default CountryList;
+

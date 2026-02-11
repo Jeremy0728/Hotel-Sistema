@@ -11,7 +11,7 @@ import Image, { StaticImageData } from "next/image";
 
 interface officerSliders {
     id: number;
-    image: StaticImageData;
+    image: string | StaticImageData;
     name: string;
     designation: string;
 }
@@ -77,3 +77,4 @@ function OfficeSlider() {
 }
 
 export default OfficeSlider;
+

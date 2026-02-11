@@ -13,7 +13,7 @@ interface Transaction {
   description: string;
   amount: string;
   amountType: "credit" | "debit";
-  image: StaticImageData;
+  image: string | StaticImageData;
 }
 
 const transactions: Transaction[] = [
@@ -107,3 +107,4 @@ const TransactionList = () => {
 };
 
 export default TransactionList;
+

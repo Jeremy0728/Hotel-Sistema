@@ -1,16 +1,10 @@
-
-import { StaticImageData } from "next/image";
 import Link from "next/link";
 
-interface BackgroundImageData {
-    "/assets/images/home-nine/trail-bg.png": StaticImageData;
-}
-
-
 const UpgradeNowCard = () => {
+    const trailBgImage = "/assets/images/home-nine/trail-bg.png";
     return (
         <div className="trail-bg h-full text-center flex flex-col justify-between items-center p-4 rounded-lg bg-cover bg-no-repeat bg-center"
-            style={{ backgroundImage: `url(${"/assets/images/home-nine/trail-bg.png".src})` }}
+            style={{ backgroundImage: `url(${trailBgImage})` }}
         >
             <h6 className="text-white text-xl mb-4">Upgrade Your Plan</h6>
             <div className="">
@@ -28,3 +22,4 @@ const UpgradeNowCard = () => {
 };
 
 export default UpgradeNowCard;
+

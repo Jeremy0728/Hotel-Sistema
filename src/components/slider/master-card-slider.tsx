@@ -17,8 +17,8 @@ interface CreditCardType {
   number: string;
   name: string;
   expiry: string;
-  cardBg: StaticImageData;
-  cardLogo: StaticImageData;
+  cardBg: string | StaticImageData;
+  cardLogo: string | StaticImageData;
 }
 
 export const creditCardData: CreditCardType[] = [
@@ -73,7 +73,7 @@ function MasterCardSlider() {
                   <h6 className="text-white mb-0">{card.type}</h6>
                   <Image
                     src={card.cardLogo}
-                    alt=""/assets/images/card/card-logo.png""
+                    alt={`${card.type} logo`}
                     width={70}
                     height={40}
                     priority
@@ -123,3 +123,4 @@ function MasterCardSlider() {
 }
 
 export default MasterCardSlider;
+

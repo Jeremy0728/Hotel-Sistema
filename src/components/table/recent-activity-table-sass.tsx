@@ -23,7 +23,7 @@ interface RecentActivityItem {
     user: {
         name: string;
         email: string;
-        image: StaticImageData;
+        image: string | StaticImageData;
     };
     transactionId: string;
     amount: string;
@@ -179,3 +179,4 @@ const RecentActivityTableSass = () => {
 };
 
 export default RecentActivityTableSass;
+

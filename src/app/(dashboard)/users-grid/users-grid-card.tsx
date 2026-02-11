@@ -41,8 +41,8 @@ export interface UserData {
     email: string;
     department: string;
     designation: string;
-    bgImage: StaticImageData;
-    avatar: StaticImageData;
+    bgImage: string | StaticImageData;
+    avatar: string | StaticImageData;
 }
 
 export const usersData: UserData[] = [
@@ -207,3 +207,4 @@ const UsersGridCard = () => {
 };
 
 export default UsersGridCard;
+

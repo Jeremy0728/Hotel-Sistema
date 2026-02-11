@@ -1,16 +1,11 @@
 import CommonLink from "@/components/shared/common-link";
 import { Card, CardContent } from "@/components/ui/card";
-import { default as PerformerImg1, default as PerformerImg6 } from "/assets/images/users/user1.png";
-
-
-
-
-import Image, { StaticImageData } from "next/image";
+import Image from "next/image";
 
 export interface TopPerformer {
   id: number;
   name: string;
-  image: StaticImageData;
+  image: string;
   agentId: string;
   earnings: number;
 }
@@ -19,7 +14,7 @@ export const topPerformers: TopPerformer[] = [
   {
     id: 1,
     name: "Dianne Russell",
-    image: PerformerImg1,
+    image: "/assets/images/users/user1.png",
     agentId: "36254",
     earnings: 20,
   },
@@ -54,7 +49,7 @@ export const topPerformers: TopPerformer[] = [
   {
     id: 6,
     name: "Arlene McCoy",
-    image: PerformerImg6,
+    image: "/assets/images/users/user6.png",
     agentId: "35685",
     earnings: 56,
   },

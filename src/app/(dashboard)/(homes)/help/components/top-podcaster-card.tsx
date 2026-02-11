@@ -13,7 +13,7 @@ interface Podcaster {
   id: number;
   name: string;
   agentId: string;
-  image: StaticImageData;
+  image: string | StaticImageData;
   rating: number;
 }
 
@@ -152,3 +152,4 @@ const TopPodcasterCard: React.FC = () => {
 };
 
 export default TopPodcasterCard;
+

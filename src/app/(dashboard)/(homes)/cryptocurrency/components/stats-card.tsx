@@ -15,7 +15,7 @@ interface CryptoItem {
     price: string;
     change: string;
     changeType: "success" | "danger";
-    image: StaticImageData;
+    image: string | StaticImageData;
     chartId: string;
     gradient: string;
     chartBg: string;
@@ -140,3 +140,4 @@ const StatsCard = () => {
 };
 
 export default StatsCard;
+

@@ -8,7 +8,7 @@ import { StaticImageData } from "next/image";
 interface TransactionsDataType {
   name: string;
   email: string;
-  image: StaticImageData;
+  image: string | StaticImageData;
   registered: string;
   plan: string;
   status: "Active" | "Inactive";
@@ -115,3 +115,4 @@ export const users: TransactionsDataType[] = [
     status: "Active",
   },
 ];
+
