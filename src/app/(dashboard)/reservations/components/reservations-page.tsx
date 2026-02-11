@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -68,16 +68,29 @@ export default function ReservationsPage() {
     completeCheckOut,
   } = useHotelData();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const statusParam = searchParams.get("status");
+  const paymentParam = searchParams.get("payment");
+  const fromParam = searchParams.get("from");
+  const toParam = searchParams.get("to");
+  const initialStatusFilter: ReservationStatus | "all" =
+    statusParam && statusOptions.some((option) => option.value === statusParam)
+      ? (statusParam as ReservationStatus | "all")
+      : "all";
+  const initialPaymentFilter =
+    paymentParam && paymentOptions.some((option) => option.value === paymentParam)
+      ? paymentParam
+      : "all";
+
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ReservationStatus | "all">(
-    "all"
-  );
+  const [statusFilter, setStatusFilter] =
+    useState<ReservationStatus | "all">(initialStatusFilter);
   const [guestFilter, setGuestFilter] = useState("all");
   const [roomFilter, setRoomFilter] = useState("all");
   const [channelFilter, setChannelFilter] = useState("all");
-  const [paymentFilter, setPaymentFilter] = useState("all");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState(initialPaymentFilter);
+  const [dateFrom, setDateFrom] = useState(fromParam ?? "");
+  const [dateTo, setDateTo] = useState(toParam ?? "");
 
   const todayStr = new Date().toISOString().split("T")[0];
 

@@ -1,15 +1,16 @@
-﻿"use client";
+"use client";
 
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Search } from "lucide-react";
+import StatusBadge from "@/components/hotel/status-badge";
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
-import { Search } from "lucide-react";
-import { Input } from "../ui/input";
-
 import {
   Command,
   CommandEmpty,
@@ -19,15 +20,43 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
+import { Input } from "../ui/input";
 import { useHotelData } from "@/contexts/HotelDataContext";
-import StatusBadge from "@/components/hotel/status-badge";
-import { Button } from "../ui/button";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
 
 const MAX_RESULTS = 5;
+const RECENTS_STORAGE_KEY = "hotel_recent_searches_map";
 
-const SearchBox = () => {
+interface SearchBoxProps {
+  className?: string;
+  placeholder?: string;
+  mobileIconOnly?: boolean;
+}
+
+function loadRecentsMap() {
+  if (typeof window === "undefined") return {} as Record<string, string[]>;
+  try {
+    const raw = localStorage.getItem(RECENTS_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, string[]>;
+    return parsed ?? {};
+  } catch {
+    return {};
+  }
+}
+
+function buildHighlightedUrl(url: string, query: string) {
+  const trimmed = query.trim();
+  if (!trimmed) return url;
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}highlight=${encodeURIComponent(trimmed)}`;
+}
+
+const SearchBox = ({
+  className,
+  placeholder = "Buscar huesped, reserva o habitacion...",
+  mobileIconOnly = false,
+}: SearchBoxProps) => {
   const router = useRouter();
   const {
     guests,
@@ -37,9 +66,14 @@ const SearchBox = () => {
     completeCheckIn,
     currentHotelId,
   } = useHotelData();
+
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [recent, setRecent] = useState<string[]>([]);
+  const [recentByHotel, setRecentByHotel] = useState<Record<string, string[]>>(
+    () => loadRecentsMap()
+  );
+
+  const recent = recentByHotel[currentHotelId] ?? [];
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -53,37 +87,33 @@ const SearchBox = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const recentsKey = `hotel_recent_searches_${currentHotelId}`;
-
-  useEffect(() => {
-    const stored = localStorage.getItem(recentsKey);
-    if (stored) {
-      try {
-        setRecent(JSON.parse(stored));
-      } catch {
-        setRecent([]);
-      }
-    }
-  }, [recentsKey]);
-
   const updateRecents = (value: string) => {
-    if (!value.trim()) return;
-    const next = [value.trim(), ...recent.filter((item) => item !== value.trim())].slice(0, 6);
-    setRecent(next);
-    localStorage.setItem(recentsKey, JSON.stringify(next));
+    const trimmed = value.trim();
+    if (!trimmed) return;
+
+    setRecentByHotel((prev) => {
+      const current = prev[currentHotelId] ?? [];
+      const nextList = [trimmed, ...current.filter((item) => item !== trimmed)].slice(0, 6);
+      const nextMap = { ...prev, [currentHotelId]: nextList };
+      if (typeof window !== "undefined") {
+        localStorage.setItem(RECENTS_STORAGE_KEY, JSON.stringify(nextMap));
+      }
+      return nextMap;
+    });
   };
 
   const normalized = query.trim().toLowerCase();
+  const roomQuery = normalized.startsWith("#") ? normalized.slice(1) : normalized;
 
   const guestResults = useMemo(() => {
     if (!normalized) return [];
     return guests
       .filter((guest) => {
-        const name = `${guest.firstName} ${guest.lastName}`.toLowerCase();
+        const fullName = `${guest.firstName} ${guest.lastName}`.toLowerCase();
         return (
-          name.includes(normalized) ||
-          guest.email.toLowerCase().includes(normalized) ||
-          guest.phone.includes(normalized)
+          fullName.includes(normalized) ||
+          guest.documentNumber.toLowerCase().includes(normalized) ||
+          guest.email.toLowerCase().includes(normalized)
         );
       })
       .slice(0, MAX_RESULTS);
@@ -96,23 +126,23 @@ const SearchBox = () => {
         return (
           reservation.code.toLowerCase().includes(normalized) ||
           reservation.guestName.toLowerCase().includes(normalized) ||
-          reservation.roomNumber.toLowerCase().includes(normalized)
+          reservation.roomNumber.toLowerCase().includes(roomQuery)
         );
       })
       .slice(0, MAX_RESULTS);
-  }, [reservations, normalized]);
+  }, [reservations, normalized, roomQuery]);
 
   const roomResults = useMemo(() => {
-    if (!normalized) return [];
+    if (!roomQuery) return [];
     return rooms
       .filter((room) => {
         return (
-          room.number.toLowerCase().includes(normalized) ||
+          room.number.toLowerCase().includes(roomQuery) ||
           room.type.toLowerCase().includes(normalized)
         );
       })
       .slice(0, MAX_RESULTS);
-  }, [rooms, normalized]);
+  }, [rooms, roomQuery, normalized]);
 
   const invoiceResults = useMemo(() => {
     if (!normalized) return [];
@@ -128,20 +158,39 @@ const SearchBox = () => {
   }, [invoices, normalized]);
 
   const goTo = (url: string, track?: string) => {
-    if (track) updateRecents(track);
+    const highlighted = buildHighlightedUrl(url, track ?? query);
+    if ((track ?? query).trim()) updateRecents(track ?? query);
     setOpen(false);
-    router.push(url);
+    router.push(highlighted);
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
+      {mobileIconOnly ? (
+        <DialogTrigger asChild>
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            className="md:hidden"
+            aria-label="Buscar"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+        </DialogTrigger>
+      ) : null}
+
       <DialogTrigger asChild>
-        <div className="relative min-w-0 w-full sm:max-w-[388px] cursor-pointer">
+        <div
+          className={cn(
+            "relative min-w-0 w-full cursor-pointer",
+            mobileIconOnly && "hidden md:block",
+            className
+          )}
+        >
           <Input
-            className={cn(
-              "bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 shadow-none focus-visible:ring-0 focus-visible:border-primary border border-slate-300 h-11 sm:h-10 pe-16 ps-11 w-full cursor-pointer disabled:opacity-[1] dark:border-slate-600"
-            )}
-            placeholder="Buscar..."
+            className="bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 shadow-none focus-visible:ring-0 focus-visible:border-primary border border-slate-300 h-10 pe-16 ps-11 w-full cursor-pointer disabled:opacity-[1] dark:border-slate-600"
+            placeholder={placeholder}
             disabled
           />
           <span className="absolute top-1/2 start-0 ms-4 -translate-y-1/2">
@@ -153,11 +202,11 @@ const SearchBox = () => {
         </div>
       </DialogTrigger>
 
-      <DialogContent className={cn("p-0 !max-w-[720px] overflow-hidden")}> 
-        <DialogTitle className="hidden">Search</DialogTitle>
+      <DialogContent className="p-0 !max-w-[720px] overflow-hidden">
+        <DialogTitle className="hidden">Busqueda global</DialogTitle>
         <Command>
           <CommandInput
-            placeholder="Buscar huésped, reserva, habitación, factura"
+            placeholder="Buscar huesped, reserva o habitacion..."
             value={query}
             onValueChange={setQuery}
           />
@@ -167,11 +216,7 @@ const SearchBox = () => {
             {recent.length > 0 && !normalized ? (
               <CommandGroup heading="Recientes" className="mt-2">
                 {recent.map((item) => (
-                  <CommandItem
-                    key={item}
-                    value={item}
-                    onSelect={() => setQuery(item)}
-                  >
+                  <CommandItem key={item} value={item} onSelect={() => setQuery(item)}>
                     {item}
                   </CommandItem>
                 ))}
@@ -179,7 +224,7 @@ const SearchBox = () => {
             ) : null}
 
             {guestResults.length > 0 ? (
-              <CommandGroup heading="Huéspedes" className="mt-2">
+              <CommandGroup heading="Huespedes" className="mt-2">
                 {guestResults.map((guest) => (
                   <CommandItem
                     key={guest.id}
@@ -192,14 +237,12 @@ const SearchBox = () => {
                           {guest.firstName} {guest.lastName}
                         </div>
                         <div className="text-xs text-neutral-500 dark:text-neutral-300">
-                          {guest.email} · {guest.phone}
+                          Doc: {guest.documentNumber}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button size="sm" variant="ghost" type="button">
-                          Abrir
-                        </Button>
-                      </div>
+                      <Button size="sm" variant="ghost" type="button">
+                        Abrir
+                      </Button>
                     </div>
                   </CommandItem>
                 ))}
@@ -246,18 +289,7 @@ const SearchBox = () => {
                             setOpen(false);
                           }}
                         >
-                          Check-in
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            goTo("/invoices", query);
-                          }}
-                        >
-                          Cobrar
+                          Check-in rapido
                         </Button>
                       </div>
                     </div>
@@ -272,11 +304,13 @@ const SearchBox = () => {
                   <CommandItem
                     key={room.id}
                     value={`room-${room.id}`}
-                    onSelect={() => goTo("/rooms", query)}
+                    onSelect={() =>
+                      goTo(`/recepcion/habitaciones?room=${room.number}`, query)
+                    }
                   >
                     <div className="flex items-center justify-between w-full gap-3">
                       <div>
-                        <div className="font-medium">Habitación #{room.number}</div>
+                        <div className="font-medium">Habitacion #{room.number}</div>
                         <div className="text-xs text-neutral-500 dark:text-neutral-300">
                           {room.type} · Piso {room.floor}
                         </div>
@@ -308,22 +342,9 @@ const SearchBox = () => {
                           {invoice.clientName} · {invoice.reservationCode ?? "Sin reserva"}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button size="sm" variant="ghost" type="button">
-                          Abrir
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            goTo("/invoices", query);
-                          }}
-                        >
-                          Cobrar
-                        </Button>
-                      </div>
+                      <Button size="sm" variant="ghost" type="button">
+                        Abrir
+                      </Button>
                     </div>
                   </CommandItem>
                 ))}

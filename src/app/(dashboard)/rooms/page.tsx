@@ -1,11 +1,5 @@
-import DashboardBreadcrumb from "@/components/layout/dashboard-breadcrumb";
-import RoomsModule from "@/app/(dashboard)/rooms/components/rooms-page";
+import { redirect } from "next/navigation";
 
 export default function RoomsPage() {
-  return (
-    <>
-      <DashboardBreadcrumb title="Habitaciones" text="Habitaciones" />
-      <RoomsModule />
-    </>
-  );
+  redirect("/recepcion/habitaciones");
 }

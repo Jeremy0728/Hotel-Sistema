@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,12 +38,26 @@ const staffOptions = ["Ana", "Carlos", "Brenda", "Luis"];
 
 export default function HousekeepingPage() {
   const { rooms, updateRoom } = useHotelData();
-  const [statusFilter, setStatusFilter] = useState<RoomStatus | "all">(
-    "cleaning"
-  );
-  const [floorFilter, setFloorFilter] = useState<number | "all">("all");
+  const searchParams = useSearchParams();
+  const statusParam = searchParams.get("status");
+  const floorParam = searchParams.get("floor");
+  const viewParam = searchParams.get("view");
+  const initialStatusFilter: RoomStatus | "all" =
+    statusParam && statusOptions.some((option) => option.value === statusParam)
+      ? (statusParam as RoomStatus | "all")
+      : "cleaning";
+  const parsedFloor = floorParam ? Number(floorParam) : NaN;
+  const initialFloorFilter: number | "all" = Number.isNaN(parsedFloor)
+    ? "all"
+    : parsedFloor;
+  const initialViewMode: "floor" | "list" =
+    viewParam === "list" || viewParam === "floor" ? viewParam : "floor";
+
+  const [statusFilter, setStatusFilter] =
+    useState<RoomStatus | "all">(initialStatusFilter);
+  const [floorFilter, setFloorFilter] = useState<number | "all">(initialFloorFilter);
   const [priorityFilter, setPriorityFilter] = useState<Priority | "all">("all");
-  const [viewMode, setViewMode] = useState<"floor" | "list">("floor");
+  const [viewMode, setViewMode] = useState<"floor" | "list">(initialViewMode);
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [priorities, setPriorities] = useState<Record<string, Priority>>({});
 

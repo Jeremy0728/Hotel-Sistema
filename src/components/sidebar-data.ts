@@ -21,6 +21,11 @@ export const data = {
       isActive: true,
       items: [
         {
+          title: "Habitaciones",
+          url: "/recepcion/habitaciones",
+          circleColor: "bg-green-500",
+        },
+        {
           title: "Reservas",
           url: "/reservations",
           circleColor: "bg-yellow-500",
@@ -57,9 +62,19 @@ export const data = {
       isActive: true,
       items: [
         {
-          title: "Habitaciones",
-          url: "/rooms",
+          title: "Configuracion habitaciones",
+          url: "/operaciones/habitaciones/configuracion",
           circleColor: "bg-green-500",
+        },
+        {
+          title: "Tipos de habitacion",
+          url: "/room-types",
+          circleColor: "bg-blue-500",
+        },
+        {
+          title: "Tarifas y reglas",
+          url: "/services",
+          circleColor: "bg-cyan-500",
         },
         {
           title: "Housekeeping",
@@ -70,11 +85,6 @@ export const data = {
           title: "Inventario",
           url: "/inventory",
           circleColor: "bg-purple-500",
-        },
-        {
-          title: "Servicios",
-          url: "/services",
-          circleColor: "bg-cyan-500",
         },
       ],
     },

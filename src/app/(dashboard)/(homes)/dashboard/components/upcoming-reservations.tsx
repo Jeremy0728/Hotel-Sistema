@@ -63,6 +63,8 @@ export default function UpcomingReservations() {
               <TableHead>Habitación</TableHead>
               <TableHead>Check-in</TableHead>
               <TableHead>Check-out</TableHead>
+              <TableHead>Noches</TableHead>
+              <TableHead>Monto</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
@@ -80,6 +82,8 @@ export default function UpcomingReservations() {
                 <TableCell>#{reservation.roomNumber}</TableCell>
                 <TableCell>{formatDate(reservation.checkIn)}</TableCell>
                 <TableCell>{formatDate(reservation.checkOut)}</TableCell>
+                <TableCell>{reservation.nights}</TableCell>
+                <TableCell>S/ {reservation.total.toFixed(2)}</TableCell>
                 <TableCell>
                   <StatusBadge type="reservation" status={reservation.status} />
                 </TableCell>
@@ -122,7 +126,7 @@ export default function UpcomingReservations() {
             ))}
             {upcoming.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-sm text-neutral-500 dark:text-neutral-300">
+                <TableCell colSpan={8} className="text-center text-sm text-neutral-500 dark:text-neutral-300">
                   No hay reservas próximas.
                 </TableCell>
               </TableRow>
@@ -147,6 +151,9 @@ export default function UpcomingReservations() {
             </p>
             <div className="text-xs text-neutral-500 dark:text-neutral-300 mt-2">
               {formatDate(reservation.checkIn)} → {formatDate(reservation.checkOut)}
+            </div>
+            <div className="text-xs text-neutral-500 dark:text-neutral-300 mt-1">
+              {reservation.nights} noches · S/ {reservation.total.toFixed(2)}
             </div>
             <div className="mt-3 flex justify-end" onClick={(event) => event.stopPropagation()}>
               <DropdownMenu>

@@ -153,7 +153,7 @@ export default function CorporateClientsPage() {
                   <TableCell>
                     <div>{client.contactName}</div>
                     <div className="text-xs text-neutral-500 dark:text-neutral-300">
-                      {client.contactEmail} · {client.contactPhone}
+                      {client.contactEmail} Â· {client.contactPhone}
                     </div>
                   </TableCell>
                   <TableCell>{client.taxId}</TableCell>

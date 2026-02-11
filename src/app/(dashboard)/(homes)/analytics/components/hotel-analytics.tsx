@@ -159,7 +159,12 @@ export default function HotelAnalytics() {
       </Card>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <MetricCard title="Ocupación hoy" value={`${occupancyRate}%`} actionLabel="Ver habitaciones" href="/rooms" />
+        <MetricCard
+          title="Ocupación hoy"
+          value={`${occupancyRate}%`}
+          actionLabel="Ver habitaciones"
+          href="/recepcion/habitaciones"
+        />
         <MetricCard title="ADR" value={`S/ ${adr}`} actionLabel="Ver tarifas" href="/room-types" />
         <MetricCard title="RevPAR" value={`S/ ${revPar}`} actionLabel="Ver ingresos" href="/invoices" />
         <MetricCard title="Pendiente por cobrar" value={`S/ ${pendingBalance.toFixed(0)}`} actionLabel="Cobrar" href="/invoices" />

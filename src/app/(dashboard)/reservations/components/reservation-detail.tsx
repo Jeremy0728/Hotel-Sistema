@@ -201,7 +201,7 @@ export default function ReservationDetail({ reservationId }: ReservationDetailPr
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
           <div>
             <p className="text-neutral-500">Habitacion</p>
-            <p className="font-medium">#{reservation.roomNumber} {room?.type ? `· ${room.type}` : ""}</p>
+            <p className="font-medium">#{reservation.roomNumber} {room?.type ? `Â· ${room.type}` : ""}</p>
           </div>
           <div>
             <p className="text-neutral-500">Noches</p>
@@ -317,7 +317,7 @@ export default function ReservationDetail({ reservationId }: ReservationDetailPr
         <div className="space-y-2">
           {timeline.map((item, index) => (
             <div key={`${item.label}-${index}`} className="text-sm text-neutral-600 dark:text-neutral-300">
-              {item.date} · {item.label}
+              {item.date} Â· {item.label}
             </div>
           ))}
         </div>

@@ -40,7 +40,7 @@ const initialNotifications: NotificationItem[] = [
     title: "Habitación por limpiar",
     message: "Habitación 201 en estado limpieza",
     status: "read",
-    link: "/rooms?view=housekeeping",
+    link: "/housekeeping",
     time: "Hace 12 min",
   },
   {

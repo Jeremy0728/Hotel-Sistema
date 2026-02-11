@@ -139,6 +139,57 @@ function generateCode() {
   return `RSV-${stamp}`;
 }
 
+function createInitialRooms(): Room[] {
+  const rooms: Room[] = [];
+
+  const statusOverrides: Record<string, RoomStatus> = {
+    "102": "occupied",
+    "103": "occupied",
+    "106": "cleaning",
+    "108": "maintenance",
+    "201": "cleaning",
+    "202": "maintenance",
+    "204": "occupied",
+    "208": "out_of_service",
+    "301": "out_of_service",
+    "304": "occupied",
+    "307": "cleaning",
+    "402": "occupied",
+    "406": "cleaning",
+    "408": "maintenance",
+    "504": "occupied",
+    "506": "cleaning",
+    "608": "out_of_service",
+    "702": "occupied",
+    "706": "cleaning",
+    "804": "maintenance",
+    "902": "occupied",
+    "908": "out_of_service",
+    "1003": "occupied",
+    "1006": "cleaning",
+    "1008": "maintenance",
+  };
+
+  for (let floor = 1; floor <= 10; floor += 1) {
+    for (let index = 1; index <= 8; index += 1) {
+      const number = String(floor * 100 + index);
+      const type =
+        index <= 3 ? "Individual" : index <= 6 ? "Doble" : "Suite";
+      const status = statusOverrides[number] ?? "available";
+
+      rooms.push({
+        id: `room-${number}`,
+        number,
+        type,
+        floor,
+        status,
+      });
+    }
+  }
+
+  return rooms;
+}
+
 export const HotelDataProvider = ({ children }: { children: ReactNode }) => {
   const [scopeMode, setScopeMode] = useState<"chain" | "hotel">("hotel");
   const [hotels] = useState<Hotel[]>(() => [
@@ -175,43 +226,7 @@ export const HotelDataProvider = ({ children }: { children: ReactNode }) => {
   const tomorrowStr = toDateString(addDays(today, 1));
   const yesterdayStr = toDateString(addDays(today, -1));
 
-  const [rooms, setRooms] = useState<Room[]>(() => [
-    {
-      id: "room-101",
-      number: "101",
-      type: "Individual",
-      floor: 1,
-      status: "available",
-    },
-    {
-      id: "room-102",
-      number: "102",
-      type: "Doble",
-      floor: 1,
-      status: "occupied",
-    },
-    {
-      id: "room-201",
-      number: "201",
-      type: "Suite",
-      floor: 2,
-      status: "cleaning",
-    },
-    {
-      id: "room-202",
-      number: "202",
-      type: "Doble",
-      floor: 2,
-      status: "maintenance",
-    },
-    {
-      id: "room-301",
-      number: "301",
-      type: "Suite",
-      floor: 3,
-      status: "out_of_service",
-    },
-  ]);
+  const [rooms, setRooms] = useState<Room[]>(() => createInitialRooms());
 
   const [roomTypes, setRoomTypes] = useState<RoomType[]>(() => [
     {

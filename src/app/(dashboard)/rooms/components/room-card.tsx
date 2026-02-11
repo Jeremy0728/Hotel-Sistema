@@ -25,7 +25,7 @@ export default function RoomCard({ room, onClick }: RoomCardProps) {
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-neutral-500 dark:text-neutral-300">
-            Habitación
+            Habitacion
           </p>
           <h3 className="text-lg font-semibold">#{room.number}</h3>
         </div>
