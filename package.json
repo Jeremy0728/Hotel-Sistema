@@ -31,6 +31,7 @@
     "@radix-ui/react-tabs": "^1.1.9",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@shadcn/ui": "^0.0.4",
+    "@vnedyalk0v/react19-simple-maps": "^2.0.2",
     "apexcharts": "^4.7.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -47,7 +48,7 @@
     "react-dom": "19.2.3",
     "react-hook-form": "^7.56.4",
     "react-hot-toast": "^2.5.2",
-    "@vnedyalk0v/react19-simple-maps": "^2.0.2",
+    "swr": "^2.4.0",
     "tailwind-merge": "^3.2.0",
     "tw-animate-css": "^1.2.5",
     "uuid": "^11.1.0",
@@ -58,10 +59,10 @@
     "@types/node": "^20",
     "@types/react": "19.2.8",
     "@types/react-dom": "19.2.3",
-    "tailwindcss": "^4",
-    "typescript": "^5.8.3",
     "eslint": "^9",
-    "eslint-config-next": "16.1.1"
+    "eslint-config-next": "16.1.1",
+    "tailwindcss": "^4",
+    "typescript": "^5.8.3"
   },
   "overrides": {
     "@types/react": "19.2.8",
