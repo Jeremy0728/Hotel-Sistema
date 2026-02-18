@@ -22,45 +22,45 @@ interface ResponseReservasServicios {
 }
 
 export const reservasServiciosApi = {
-  // GET /api/reservas-servicios/traer-todos
+  // GET /api/servicios-reserva/traer-todos
   traerTodos: async (page = 1, limit = 10): Promise<ResponseReservasServicios> => {
     const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
-    return await apiGet<ResponseReservasServicios>(`/reservas-servicios/traer-todos?${params}`);
+    return await apiGet<ResponseReservasServicios>(`/servicios-reserva/traer-todos?${params}`);
   },
 
-  // GET /api/reservas-servicios/traer-por-id/:id
+  // GET /api/servicios-reserva/traer-por-id/:id
   traerPorId: async (id: number): Promise<{ ok: boolean; reserva: ReservaServicio }> => {
-    return await apiGet(`/reservas-servicios/traer-por-id/${id}`);
+    return await apiGet(`/servicios-reserva/traer-por-id/${id}`);
   },
 
-  // GET /api/reservas-servicios/traer-por-reserva/:reservationId
+  // GET /api/servicios-reserva/traer-por-reserva/:reservationId
   traerPorReserva: async (reservationId: number): Promise<{ ok: boolean; reservas: ReservaServicio[] }> => {
-    return await apiGet(`/reservas-servicios/traer-por-reserva/${reservationId}`);
+    return await apiGet(`/servicios-reserva/traer-por-reserva/${reservationId}`);
   },
 
-  // POST /api/reservas-servicios/crear
+  // POST /api/servicios-reserva/crear
   crear: async (data: Omit<ReservaServicio, "id">): Promise<{ ok: boolean; reserva: ReservaServicio }> => {
-    return await apiPost("/reservas-servicios/crear", data);
+    return await apiPost("/servicios-reserva/crear", data);
   },
 
-  // PUT /api/reservas-servicios/actualizar/:id
+  // PUT /api/servicios-reserva/actualizar/:id
   actualizar: async (id: number, data: Partial<ReservaServicio>): Promise<{ ok: boolean; reserva: ReservaServicio }> => {
-    return await apiPut(`/reservas-servicios/actualizar/${id}`, data);
+    return await apiPut(`/servicios-reserva/actualizar/${id}`, data);
   },
 
-  // PATCH /api/reservas-servicios/cambiar-estado/:id
+  // PATCH /api/servicios-reserva/cambiar-estado/:id
   cambiarEstado: async (id: number, status: ReservaServicio["status"]): Promise<{ ok: boolean; reserva: ReservaServicio }> => {
-    return await apiPatch(`/reservas-servicios/cambiar-estado/${id}`, { status });
+    return await apiPatch(`/servicios-reserva/cambiar-estado/${id}`, { status });
   },
 
-  // DELETE /api/reservas-servicios/cancelar/:id
+  // DELETE /api/servicios-reserva/cancelar/:id
   cancelar: async (id: number): Promise<{ ok: boolean; reserva: ReservaServicio }> => {
-    return await apiDelete(`/reservas-servicios/cancelar/${id}`);
+    return await apiDelete(`/servicios-reserva/cancelar/${id}`);
   },
 
-  // GET /api/reservas-servicios/por-fecha
+  // GET /api/servicios-reserva/por-fecha
   obtenerPorFecha: async (date: string): Promise<{ ok: boolean; reservas: ReservaServicio[] }> => {
     const params = new URLSearchParams({ date });
-    return await apiGet(`/reservas-servicios/por-fecha?${params}`);
+    return await apiGet(`/servicios-reserva/por-fecha?${params}`);
   },
 };

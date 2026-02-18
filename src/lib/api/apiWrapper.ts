@@ -1,6 +1,7 @@
 import { AxiosError, AxiosRequestConfig } from 'axios';
 import apiClient from '@/lib/axios/interceptors';
 import { ApiCallOptions, ApiError } from '@/types/api';
+import { handleErrors } from '@/lib/utils/errors';
 
 /**
  * Construye una URL con query parameters
@@ -67,6 +68,10 @@ export const apiGet = async <T = any>(
     const response = await apiClient.get(url, config);
     return response.data;
   } catch (error) {
+    // Pasar el error original a handleErrors para que procese correctamente los errores de validación
+    handleErrors(error, { showToast: options?.showErrorToast });
+    
+    // Transformar y lanzar el error para mantener compatibilidad
     const apiError = handleApiError(error, options);
     throw apiError;
   }
@@ -88,6 +93,7 @@ export const apiPost = async <T = any>(
     const response = await apiClient.post(url, data, config);
     return response.data;
   } catch (error) {
+    handleErrors(error, { showToast: options?.showErrorToast });
     const apiError = handleApiError(error, options);
     throw apiError;
   }
@@ -109,6 +115,7 @@ export const apiPut = async <T = any>(
     const response = await apiClient.put(url, data, config);
     return response.data;
   } catch (error) {
+    handleErrors(error, { showToast: options?.showErrorToast });
     const apiError = handleApiError(error, options);
     throw apiError;
   }
@@ -130,6 +137,7 @@ export const apiPatch = async <T = any>(
     const response = await apiClient.patch(url, data, config);
     return response.data;
   } catch (error) {
+    handleErrors(error, { showToast: options?.showErrorToast });
     const apiError = handleApiError(error, options);
     throw apiError;
   }
@@ -150,6 +158,7 @@ export const apiDelete = async <T = any>(
     const response = await apiClient.delete(url, config);
     return response.data;
   } catch (error) {
+    handleErrors(error, { showToast: options?.showErrorToast });
     const apiError = handleApiError(error, options);
     throw apiError;
   }

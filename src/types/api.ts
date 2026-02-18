@@ -36,4 +36,5 @@ export interface ErrorHandlingOptions {
   customMessage?: string;
   redirectOnError?: boolean;
   redirectUrl?: string;
+  skipJWTHandling?: boolean;
 }

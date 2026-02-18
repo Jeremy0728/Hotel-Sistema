@@ -22,7 +22,7 @@ interface RoomOpsTileProps {
 }
 
 function typeCode(type: string) {
-  return type.replace(/\s+/g, "").slice(0, 3).toUpperCase() || "STD";
+  return type?.replace(/\s+/g, "").slice(0, 3).toUpperCase() || "STD";
 }
 
 function accent(status: RoomStatus) {

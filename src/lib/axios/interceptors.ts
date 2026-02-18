@@ -10,21 +10,28 @@ export const apiClient = axios.create({
   },
 });
 
+// TODO: Valores hardcodeados temporalmente - Reemplazar con valores del login
+const TEMP_HOTEL_ID = '5922714f-d18d-43ed-97aa-b0b314afa8d4';
+const TEMP_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOjEsImVtYWlsIjoiYWRtaW5AaG90ZWxncmltYS5jb20iLCJub21icmVzIjoiQ2FybG9zIiwiYXBlbGxpZG9fcGF0ZXJubyI6IkFkbWluaXN0cmFkb3IiLCJhcGVsbGlkb19tYXRlcm5vIjoiU2lsdmEiLCJyb2wiOiJhZG1pbiIsImhvdGVsX2lkIjoiNTkyMjcxNGYtZDE4ZC00M2VkLTk3YWEtYjBiMzE0YWZhOGQ0IiwiaWF0IjoxNzcxMDE2Nzg5LCJleHAiOjE3NzM2MDg3ODl9.9Hk_CtOFRIWtatVy4VYBZs4aqGoU9xaILOTxSKMMy6o';
+
 // Interceptor de Request - Agregar JWT y Hotel ID automáticamente
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     try {
-      const session = await getSession();
+      // TODO: Descomentar cuando el login esté implementado
+      // const session = await getSession();
       
-      // Agregar token JWT si existe
-      if (session?.user?.accessToken) {
-        config.headers.Authorization = `Bearer ${session.user.accessToken}`;
-      }
+      // Usar valores hardcodeados temporalmente
+      config.headers.Authorization = `Bearer ${TEMP_TOKEN}`;
+      config.headers['X-Hotel-Id'] = TEMP_HOTEL_ID;
       
-      // Agregar Hotel ID para multi-tenant (si existe en la sesión)
-      if (session?.user?.hotelId) {
-        config.headers['X-Hotel-Id'] = session.user.hotelId;
-      }
+      // TODO: Reemplazar con esto cuando el login esté listo:
+      // if (session?.user?.accessToken) {
+      //   config.headers.Authorization = `Bearer ${session.user.accessToken}`;
+      // }
+      // if (session?.user?.hotelId) {
+      //   config.headers['X-Hotel-Id'] = session.user.hotelId;
+      // }
       
       return config;
     } catch (error) {

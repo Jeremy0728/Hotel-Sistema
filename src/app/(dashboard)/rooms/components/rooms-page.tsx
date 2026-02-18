@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Building2, CircleCheck, LoaderCircle, Wrench } from "lucide-react";
+import { Building2, CircleCheck, LoaderCircle, Wrench, AlertCircle } from "lucide-react";
 import EmptyState from "@/components/hotel/empty-state";
 import InvoiceStatusBadge from "@/components/hotel/invoice-status-badge";
 import StatusBadge from "@/components/hotel/status-badge";
@@ -23,6 +23,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useHotelData } from "@/contexts/HotelDataContext";
+import { useRooms } from "@/hooks/useRooms";
 import type { Invoice, Reservation, Room, RoomStatus } from "@/types/hotel";
 import RoomOpsTile from "./room-ops-tile";
 
@@ -60,7 +61,6 @@ function paxLabel(reservation?: Reservation) {
 
 export default function RoomsPage() {
   const {
-    rooms,
     reservations,
     invoices,
     hotelSettings,
@@ -68,6 +68,19 @@ export default function RoomsPage() {
     completeCheckIn,
     completeCheckOut,
   } = useHotelData();
+    console.log("🚀 ~ RoomsPage ~ reservations:", reservations)
+  
+  // Usar custom hook para obtener habitaciones desde la API
+  const { 
+    rooms, 
+    isLoading: roomsLoading, 
+    isError: roomsError, 
+    error: roomsErrorData,
+    updateRoomStatus,
+    refreshRooms 
+  } = useRooms({ limit: 10 });
+    console.log("🚀 ~ RoomsPage ~ rooms:", rooms)
+  
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -275,6 +288,38 @@ export default function RoomsPage() {
     if (snapshot.room.status === "occupied") return "Huesped alojado";
     return "Lista";
   };
+
+  // Mostrar estado de carga
+  if (roomsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3">
+          <LoaderCircle className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="text-sm text-neutral-500">Cargando habitaciones...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar error si ocurre
+  if (roomsError) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="p-6 max-w-md">
+          <div className="text-center space-y-3">
+            <AlertCircle className="h-12 w-12 mx-auto text-destructive" />
+            <h3 className="text-lg font-semibold">Error al cargar habitaciones</h3>
+            <p className="text-sm text-neutral-500">
+              {roomsErrorData?.msg || 'No se pudieron cargar las habitaciones. Por favor, intenta de nuevo.'}
+            </p>
+            <Button onClick={refreshRooms} variant="outline">
+              Reintentar
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
