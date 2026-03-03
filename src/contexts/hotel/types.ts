@@ -82,7 +82,7 @@ export interface HotelDataContextValue {
     methodId: string,
     updates: Partial<PaymentMethod>
   ) => void;
-  addInvoicePayment: (
+  addInvoicePayment?: (
     invoiceId: string,
     payment: Omit<InvoicePayment, "id">
   ) => void;

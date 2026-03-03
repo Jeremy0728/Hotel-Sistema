@@ -1,26 +1,5 @@
 import { apiGet, apiPost, apiPut, apiPatch } from "@/lib/api/apiWrapper";
-
-interface Factura {
-  id: number;
-  reservation_id: number;
-  invoice_number: string;
-  issue_date: string;
-  due_date?: string;
-  subtotal: string;
-  tax: string;
-  discount?: string;
-  total: string;
-  status: "pending" | "paid" | "partially_paid" | "cancelled";
-  notes?: string;
-}
-
-interface ResponseFacturas {
-  ok: boolean;
-  facturas: Factura[];
-  total: number;
-  page: number;
-  totalPages: number;
-}
+import { ResponseFacturas, FacturaAPI } from "@/types/hotel";
 
 export const facturasApi = {
   // GET /api/facturas/traer-todos
@@ -31,37 +10,37 @@ export const facturasApi = {
   },
 
   // GET /api/facturas/traer-por-id/:id
-  traerPorId: async (id: number): Promise<{ ok: boolean; factura: Factura }> => {
+  traerPorId: async (id: number): Promise<{ ok: boolean; factura: FacturaAPI }> => {
     return await apiGet(`/facturas/traer-por-id/${id}`);
   },
 
   // GET /api/facturas/traer-por-reserva/:reservationId
-  traerPorReserva: async (reservationId: number): Promise<{ ok: boolean; factura: Factura | null }> => {
+  traerPorReserva: async (reservationId: number): Promise<{ ok: boolean; factura: FacturaAPI | null }> => {
     return await apiGet(`/facturas/traer-por-reserva/${reservationId}`);
   },
 
   // POST /api/facturas/crear
-  crear: async (data: Omit<Factura, "id" | "invoice_number">): Promise<{ ok: boolean; factura: Factura }> => {
+  crear: async (data: Omit<FacturaAPI, "id" | "invoice_number">): Promise<{ ok: boolean; factura: FacturaAPI }> => {
     return await apiPost("/facturas/crear", data);
   },
 
   // PUT /api/facturas/actualizar/:id
-  actualizar: async (id: number, data: Partial<Factura>): Promise<{ ok: boolean; factura: Factura }> => {
+  actualizar: async (id: number, data: Partial<FacturaAPI>): Promise<{ ok: boolean; factura: FacturaAPI }> => {
     return await apiPut(`/facturas/actualizar/${id}`, data);
   },
 
   // PATCH /api/facturas/cambiar-estado/:id
-  cambiarEstado: async (id: number, status: Factura["status"]): Promise<{ ok: boolean; factura: Factura }> => {
+  cambiarEstado: async (id: number, status: FacturaAPI["status"]): Promise<{ ok: boolean; factura: FacturaAPI }> => {
     return await apiPatch(`/facturas/cambiar-estado/${id}`, { status });
   },
 
   // GET /api/facturas/pendientes
-  obtenerPendientes: async (): Promise<{ ok: boolean; facturas: Factura[] }> => {
+  obtenerPendientes: async (): Promise<{ ok: boolean; facturas: FacturaAPI[] }> => {
     return await apiGet("/facturas/pendientes");
   },
 
   // GET /api/facturas/por-fecha
-  obtenerPorFecha: async (startDate: string, endDate: string): Promise<{ ok: boolean; facturas: Factura[] }> => {
+  obtenerPorFecha: async (startDate: string, endDate: string): Promise<{ ok: boolean; facturas: FacturaAPI[] }> => {
     const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
     return await apiGet(`/facturas/por-fecha?${params}`);
   },

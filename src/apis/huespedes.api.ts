@@ -2,8 +2,9 @@ import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api/apiWrapper";
 
 interface Huesped {
   id: number;
-  first_name: string;
-  last_name: string;
+  nombres: string;
+  apellido_paterno: string;
+  apellido_materno: string;
   email: string;
   phone: string;
   document_type: "dni" | "passport" | "ce";

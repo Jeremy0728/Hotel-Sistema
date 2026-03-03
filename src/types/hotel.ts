@@ -63,6 +63,8 @@ export interface Reservation {
   id: string;
   code: string;
   guestId: string;
+  confirmation_code: string;
+  guest?: Guest;
   guestName: string;
   channel?: "direct" | "ota" | "corporate";
   additionalGuestIds?: string[];
@@ -221,15 +223,75 @@ export interface Invoice {
   date: string;
   clientName: string;
   clientType: "guest" | "corporate";
+  guestId?: string;
+  guestName?: string;
+  corporateClientId?: string;
+  corporateClientName?: string;
+  reservationId?: string;
   reservationCode?: string;
-  status: InvoiceStatus;
   items: InvoiceItem[];
   subtotal: number;
   tax: number;
   total: number;
   balance: number;
+  status: InvoiceStatus;
   payments: InvoicePayment[];
+  dueDate?: string;
   notes?: string;
+}
+
+export interface FacturaAPI {
+  id: number;
+  invoice_number: string;
+  reservation_id: number;
+  guest_id?: number;
+  corporate_client_id?: number;
+  issue_date: string;
+  due_date?: string;
+  subtotal: string;
+  tax_amount: string;
+  discount_amount?: string;
+  total_amount: string;
+  status: "draft" | "sent" | "paid" | "overdue" | "cancelled";
+  notes?: string;
+  created_by?: number;
+  created_at?: string;
+  reservation?: {
+    id: number;
+    confirmation_code: string;
+    check_in_date: string;
+    check_out_date: string;
+  };
+  guest?: {
+    id: number;
+    nombres: string;
+    apellido_paterno: string;
+    apellido_materno?: string;
+    email: string;
+  };
+  corporateClient?: {
+    id: number;
+    company_name: string;
+  };
+}
+
+export interface Factura extends FacturaAPI {
+  number: string;
+  date: string;
+  clientName: string;
+  clientType: "guest" | "corporate";
+  reservationCode?: string;
+  total: string;
+  tax: string;
+  balance: string;
+}
+
+export interface ResponseFacturas {
+  ok: boolean;
+  invoices: FacturaAPI[];
+  total: number;
+  page: number;
+  totalPages: number;
 }
 
 export interface PaymentMethod {
@@ -270,6 +332,18 @@ export interface PlanModule {
   status: "active" | "available" | "unavailable";
   requiredPlan?: string;
 }
+
+export interface RoomSnapshot {
+  room: Room;
+  roomReservations: Reservation[];
+  activeReservation?: Reservation;
+  arrivalReservation?: Reservation;
+  departureReservation?: Reservation;
+  pendingInvoice?: Invoice;
+  hasPendingPayment: boolean;
+  hasAlert: boolean;
+}
+
 
 export interface Hotel {
   id: string;

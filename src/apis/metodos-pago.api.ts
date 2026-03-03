@@ -1,24 +1,30 @@
 import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api/apiWrapper";
 
-interface MetodoPago {
+export interface MetodoPago {
   id: number;
   name: string;
   description?: string;
   is_active: boolean;
 }
 
-interface ResponseMetodosPago {
+export interface ResponseMetodosPago {
   ok: boolean;
-  metodos: MetodoPago[];
-  total: number;
-  page: number;
+  paymentMethods: MetodoPago[];
+  totalCount: number;
+  currentPage: number;
   totalPages: number;
 }
 
 export const metodosPagoApi = {
   // GET /api/metodos-pago/traer-todos
-  traerTodos: async (page = 1, limit = 10): Promise<ResponseMetodosPago> => {
-    const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
+  traerTodos: async (page = 1, limit = 100, is_active?: boolean): Promise<ResponseMetodosPago> => {
+    const params = new URLSearchParams({ 
+      page: page.toString(), 
+      limit: limit.toString() 
+    });
+    if (is_active !== undefined) {
+      params.append('is_active', is_active.toString());
+    }
     return await apiGet<ResponseMetodosPago>(`/metodos-pago/traer-todos?${params}`);
   },
 
@@ -42,8 +48,8 @@ export const metodosPagoApi = {
     return await apiDelete(`/metodos-pago/eliminar/${id}`);
   },
 
-  // GET /api/metodos-pago/activos
-  obtenerActivos: async (): Promise<{ ok: boolean; metodos: MetodoPago[] }> => {
-    return await apiGet("/metodos-pago/activos");
+  // GET /api/metodos-pago/traer-todos con filtro de activos
+  obtenerActivos: async (): Promise<ResponseMetodosPago> => {
+    return await metodosPagoApi.traerTodos(1, 100, true);
   },
 };

@@ -7,155 +7,15 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table";
-
-
-
-
-
-
-
-
-
-
 import { Edit, Eye, Trash2 } from "lucide-react";
 import Image from "next/image";
+import { User } from "@/types/auth";
 
+interface UserTableProps {
+    users: User[];
+}
 
-interface User {
-    id: string;
-    name: string;
-    email: string;
-    department: string;
-    designation: string;
-    status: "Active" | "Inactive";
-    joinDate: string;
-    avatar: string;
-};
-
-const users: User[] = [
-    {
-        id: "1",
-        name: "Kathryn Murphy",
-        email: "osgoodwy@gmail.com",
-        department: "HR",
-        designation: "Manager",
-        status: "Active",
-        joinDate: "25 Jan 2024",
-        avatar: "/assets/images/user-list/user-list1.png",
-    },
-    {
-        id: "2",
-        name: "Annette Black",
-        email: "redaniel@gmail.com",
-        department: "Design",
-        designation: "UI UX Designer",
-        status: "Inactive",
-        joinDate: "25 Jan 2024",
-        avatar: "/assets/images/user-list/user-list2.png",
-    },
-    {
-        id: "3",
-        name: "Darlene Robertson",
-        email: "darlene.robertson@example.com",
-        department: "Engineering",
-        designation: "Frontend Developer",
-        status: "Active",
-        joinDate: "12 Mar 2023",
-        avatar: "/assets/images/user-list/user-list3.png",
-    },
-    {
-        id: "4",
-        name: "Cameron Williamson",
-        email: "cameron.williamson@example.com",
-        department: "Engineering",
-        designation: "Backend Developer",
-        status: "Inactive",
-        joinDate: "08 Aug 2022",
-        avatar: "/assets/images/user-list/user-list4.png",
-    },
-    {
-        id: "5",
-        name: "Leslie Alexander",
-        email: "leslie.alexander@example.com",
-        department: "Finance",
-        designation: "Accountant",
-        status: "Active",
-        joinDate: "15 Oct 2023",
-        avatar: "/assets/images/user-list/user-list5.png",
-    },
-    {
-        id: "6",
-        name: "Courtney Henry",
-        email: "courtney.henry@example.com",
-        department: "Marketing",
-        designation: "Marketing Specialist",
-        status: "Active",
-        joinDate: "01 Jun 2023",
-        avatar: "/assets/images/user-list/user-list6.png",
-    },
-    {
-        id: "7",
-        name: "Brooklyn Simmons",
-        email: "brooklyn.simmons@example.com",
-        department: "Operations",
-        designation: "Operations Manager",
-        status: "Inactive",
-        joinDate: "20 Feb 2022",
-        avatar: "/assets/images/user-list/user-list7.png",
-    },
-    {
-        id: "8",
-        name: "Jerome Bell",
-        email: "jerome.bell@example.com",
-        department: "Sales",
-        designation: "Sales Executive",
-        status: "Active",
-        joinDate: "30 Nov 2023",
-        avatar: "/assets/images/user-list/user-list8.png",
-    },
-    {
-        id: "9",
-        name: "Floyd Miles",
-        email: "floyd.miles@example.com",
-        department: "Customer Support",
-        designation: "Support Specialist",
-        status: "Active",
-        joinDate: "10 Sep 2023",
-        avatar: "/assets/images/user-list/user-list9.png",
-    },
-    {
-        id: "10",
-        name: "Savannah Nguyen",
-        email: "savannah.nguyen@example.com",
-        department: "Legal",
-        designation: "Legal Advisor",
-        status: "Inactive",
-        joinDate: "18 Dec 2022",
-        avatar: "/assets/images/user-list/user-list10.png",
-    },
-    {
-        id: "11",
-        name: "Arlene McCoy",
-        email: "arlene.mccoy@example.com",
-        department: "Admin",
-        designation: "Office Administrator",
-        status: "Active",
-        joinDate: "05 May 2024",
-        avatar: "/assets/images/user-list/user-list4.png",
-    },
-    {
-        id: "12",
-        name: "Devon Lane",
-        email: "devon.lane@example.com",
-        department: "IT",
-        designation: "System Analyst",
-        status: "Inactive",
-        joinDate: "22 Jul 2021",
-        avatar: "/assets/images/user-list/user-list2.png",
-    },
-];
-
-export default function UserTable() {
+export default function UserTable({ users }: UserTableProps) {
     return (
         <Table>
             <TableHeader>
@@ -182,20 +42,16 @@ export default function UserTable() {
                             <TableCell
                                 className={`py-4 px-4 border-b text-center first:border-s last:border-e border-neutral-200 dark:border-slate-600 ${isLast ? "rounded-bl-lg" : ""
                                     }`}
-                            >{user.joinDate}</TableCell>
+                            >{user.created_at ? new Date(user.created_at).toLocaleDateString() : "-"}</TableCell>
                             <TableCell
                                 className={`py-4 px-4 border-b text-center first:border-s last:border-e border-neutral-200 dark:border-slate-600 ${isLast ? "rounded-bl-lg" : ""
                                     }`}
                             >
                                 <div className="flex items-center gap-2">
-                                    <Image
-                                        src={user.avatar}
-                                        alt={user.name}
-                                        width={40}
-                                        height={40}
-                                        className="w-10 h-10 rounded-full object-cover"
-                                    />
-                                    <span>{user.name}</span>
+                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                                        {user.name?.charAt(0).toUpperCase() || "U"}
+                                    </div>
+                                    <span>{user.name || "Usuario"}</span>
                                 </div>
                             </TableCell>
                             <TableCell
@@ -205,22 +61,22 @@ export default function UserTable() {
                             <TableCell
                                 className={`py-4 px-4 border-b text-center first:border-s last:border-e border-neutral-200 dark:border-slate-600 ${isLast ? "rounded-bl-lg" : ""
                                     }`}
-                            >{user.department}</TableCell>
+                            >{user.role || "-"}</TableCell>
                             <TableCell
                                 className={`py-4 px-4 border-b text-center first:border-s last:border-e border-neutral-200 dark:border-slate-600 ${isLast ? "rounded-bl-lg" : ""
                                     }`}
-                            >{user.designation}</TableCell>
+                            >{user.role || "-"}</TableCell>
                             <TableCell
                                 className={`py-4 px-4 border-b text-center first:border-s last:border-e border-neutral-200 dark:border-slate-600 ${isLast ? "rounded-bl-lg" : ""
                                     }`}
                             >
                                 <span
-                                    className={`px-3 py-1.5 rounded text-sm font-medium border ${user.status === "Active"
+                                    className={`px-3 py-1.5 rounded text-sm font-medium border ${user.is_active
                                         ? "bg-green-600/15 text-green-600 border-green-600"
                                         : "bg-gray-600/15 text-gray-600 dark:text-white border-gray-400"
                                         }`}
                                 >
-                                    {user.status}
+                                    {user.is_active ? "Active" : "Inactive"}
                                 </span>
                             </TableCell>
                             <TableCell

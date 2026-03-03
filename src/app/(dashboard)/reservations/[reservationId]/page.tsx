@@ -2,16 +2,18 @@
 import ReservationDetail from "@/app/(dashboard)/reservations/components/reservation-detail";
 
 interface ReservationDetailPageProps {
-  params: {
+  params: Promise<{
     reservationId: string;
-  };
+  }>;
 }
 
-export default function ReservationDetailPage({ params }: ReservationDetailPageProps) {
+export default async function ReservationDetailPage({ params }: ReservationDetailPageProps) {
+  const { reservationId } = await params;
+  
   return (
     <>
       <DashboardBreadcrumb title="Detalle de reserva" text="Reservas" />
-      <ReservationDetail reservationId={params.reservationId} />
+      <ReservationDetail reservationId={reservationId} />
     </>
   );
 }

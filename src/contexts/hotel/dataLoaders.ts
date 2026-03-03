@@ -1,5 +1,6 @@
 import type {
   CorporateClient,
+  Factura,
   Guest,
   InventoryItem,
   InventoryLocation,
@@ -26,6 +27,7 @@ import { inventarioApi } from "@/apis/inventario.api";
 import { serviciosAdicionalesApi } from "@/apis/servicios-adicionales.api";
 import { reservasServiciosApi } from "@/apis/reservas-servicios.api";
 import { ventasApi } from "@/apis/ventas.api";
+import { facturasApi } from "@/apis/facturas.api";
 
 import { calculateNights } from "./utils";
 
@@ -96,11 +98,14 @@ export async function loadReservations(
     setLoading(true);
     const response = await reservasApi.traerTodos(1, 100);
     if (response.ok && response.reservas) {
-      const mapped: Reservation[] = response.reservas.map(reserva => ({
+      const mapped: Reservation[] = response.reservas.map(reserva => {
+        const guest = reserva.guest;
+        return {
         id: String(reserva.id),
         code: `RSV-${reserva.id}`,
+        confirmation_code: reserva.confirmation_code || '',
         guestId: String(reserva.guest_id),
-        guestName: '',
+        guestName: `${guest?.nombres} ${guest?.apellido_paterno} ${guest?.apellido_materno}`,
         channel: 'direct',
         additionalGuestIds: [],
         roomId: String(reserva.room_id),
@@ -110,10 +115,11 @@ export async function loadReservations(
         checkOut: reserva.check_out_date,
         nights: calculateNights(reserva.check_in_date, reserva.check_out_date),
         total: parseFloat(reserva.total_price),
-        adults: reserva.num_guests,
-        children: 0,
+        adults: reserva.adults || 0,
+        children: reserva.children || 0,
         createdAt: reserva.created_at || reserva.check_in_date
-      }));
+      }
+      });
       setReservations(mapped);
     }
   } catch (error) {
@@ -339,6 +345,35 @@ export async function loadSales(
   }
 }
 
+export async function loadInvoices(
+  setInvoices: (invoices: Factura[]) => void,
+  setLoading: (loading: boolean) => void
+) {
+  try {
+    setLoading(true);
+    const response = await facturasApi.traerTodos(1, 100);
+    if (response.ok && response.invoices) {
+      const mapped: Factura[] = response.invoices.map(invoice => ({
+        ...invoice,
+        number: invoice.invoice_number,
+        date: invoice.issue_date,
+        clientName: invoice.guest ? `${invoice.guest.nombres} ${invoice.guest.apellido_paterno}` : 
+                    invoice.corporateClient ? invoice.corporateClient.company_name : '',
+        clientType: (invoice.corporate_client_id ? 'corporate' : 'guest') as "guest" | "corporate",
+        reservationCode: invoice.reservation?.confirmation_code,
+        total: parseFloat(invoice.total_amount).toFixed(2),
+        tax: parseFloat(invoice.tax_amount).toFixed(2),
+        balance: parseFloat(invoice.total_amount).toFixed(2),
+      }));
+      setInvoices(mapped);
+    }
+  } catch (error) {
+    console.error('Error loading invoices:', error);
+  } finally {
+    setLoading(false);
+  }
+}
+
 export async function loadAllData(setters: {
   setRoomTypes: (types: RoomType[]) => void;
   setIsLoadingRoomTypes: (loading: boolean) => void;
@@ -362,7 +397,10 @@ export async function loadAllData(setters: {
   setIsLoadingServiceBookings: (loading: boolean) => void;
   setSales: (sales: Sale[]) => void;
   setIsLoadingSales: (loading: boolean) => void;
+  setInvoices: (invoices: any[]) => void;
+  setIsLoadingInvoices: (loading: boolean) => void;
 }) {
+  // Cargar datos en paralelo desde las APIs
   await Promise.all([
     loadRoomTypes(setters.setRoomTypes, setters.setIsLoadingRoomTypes),
     loadGuests(setters.setGuests, setters.setIsLoadingGuests),
@@ -375,5 +413,6 @@ export async function loadAllData(setters: {
     loadServices(setters.setServices, setters.setIsLoadingServices),
     loadServiceBookings(setters.setServiceBookings, setters.setIsLoadingServiceBookings),
     loadSales(setters.setSales, setters.setIsLoadingSales),
+    loadInvoices(setters.setInvoices, setters.setIsLoadingInvoices),
   ]);
 }

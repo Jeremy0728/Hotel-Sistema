@@ -30,9 +30,14 @@ import type {
   ServiceBooking,
 } from "@/types/hotel";
 
+// Importar los nuevos hooks
+import { useRooms } from "@/hooks/useRooms";
+import { useReservations } from "@/hooks/useReservations";
+import { useInvoices } from "@/hooks/useInvoices";
+import { useHotelSettings } from "@/hooks/useHotelSettings";
+
 import { HotelDataContextValue } from "./hotel/types";
-import { addDays, toDateString, formatWeekday, createInitialRooms } from "./hotel/utils";
-import { loadAllData } from "./hotel/dataLoaders";
+import { addDays, toDateString, formatWeekday } from "./hotel/utils";
 import {
   createRoomActions,
   createRoomTypeActions,
@@ -87,53 +92,172 @@ export const HotelDataProvider = ({ children }: { children: ReactNode }) => {
     hotels[0]?.id ?? "hotel-aurora"
   );
   
-  const today = new Date();
+  // Usar los nuevos hooks para obtener datos reales
+  const {
+    rooms: apiRooms,
+    updateRoomStatus,
+  } = useRooms({ limit: 100 });
+
+  const { reservations: apiReservations, refreshReservations } =
+    useReservations({ limit: 100 });
+
+  const { invoices: apiInvoices } = useInvoices({ limit: 100 });
+
+  const { settings: hotelSettings, updateSettings } = useHotelSettings();
+
+  // Transformar datos de API a formato local
+  const rooms: Room[] = useMemo(
+    () =>
+      apiRooms.map((room) => ({
+        id: String(room.id),
+        number: room.number,
+        type: room.roomType?.name || "Standard",
+        floor: room.floor,
+        status: room.status,
+        notes: room.notes,
+      })),
+    [apiRooms]
+  );
+
+  const reservations: Reservation[] = useMemo(
+    () =>
+      apiReservations.map((res) => ({
+        id: String(res.id),
+        code: res.confirmation_code,
+        confirmation_code: res.confirmation_code,
+        guestId: String(res.guest_id),
+        guestName: res.huesped
+          ? `${res.huesped.nombres} ${res.huesped.apellido_paterno}`
+          : "Huésped",
+        roomId: String(res.room_id),
+        roomNumber: res.habitacion?.number || "",
+        status:
+          res.status === "checked_in"
+            ? ("checkin" as const)
+            : res.status === "checked_out"
+            ? ("checkout" as const)
+            : (res.status as "pending" | "confirmed" | "cancelled"),
+        checkIn: res.check_in_date,
+        checkOut: res.check_out_date,
+        nights: Math.ceil(
+          (new Date(res.check_out_date).getTime() -
+            new Date(res.check_in_date).getTime()) /
+            (1000 * 60 * 60 * 24)
+        ),
+        total: parseFloat(res.total_price),
+        adults: res.adults,
+        children: res.children,
+        notes: res.special_requests,
+        createdAt: res.check_in_date,
+      })),
+    [apiReservations]
+  );
+
+  const invoices: Invoice[] = useMemo(() => apiInvoices, [apiInvoices]);
+
+  const today = useMemo(() => new Date(), []);
   const todayStr = toDateString(today);
 
-  // Estados principales
-  const [rooms, setRooms] = useState<Room[]>(() => createInitialRooms());
-  const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
-  const [guests, setGuests] = useState<Guest[]>([]);
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [corporateClients, setCorporateClients] = useState<CorporateClient[]>([]);
-  const [categories, setCategories] = useState<ProductCategory[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [locations, setLocations] = useState<InventoryLocation[]>([]);
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
+  // Mock setters for data that comes from external hooks (useRooms, useReservations, useHotelSettings)
+  const setRooms = () => {
+    console.warn('setRooms called but rooms come from useRooms hook - changes will not persist');
+  };
+  
+  const setReservations = () => {
+    console.warn('setReservations called but reservations come from useReservations hook - changes will not persist');
+  };
+  
+  const setHotelSettings = () => {
+    console.warn('setHotelSettings called but hotelSettings come from useHotelSettings hook - use updateSettings instead');
+  };
+
+  // Estados locales para entidades que aún no tienen API
+  const useRoomTypes = () => {
+    const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
+    const [isLoadingRoomTypes, setIsLoadingRoomTypes] = useState(false);
+
+    useEffect(() => {
+      // Load room types from API or local storage
+    }, []);
+
+    return { roomTypes, setRoomTypes, isLoadingRoomTypes };
+  };
+
+  const useGuests = () => {
+    const [guests, setGuests] = useState<Guest[]>([]);
+    const [isLoadingGuests, setIsLoadingGuests] = useState(false);
+
+    useEffect(() => {
+      // Load guests from API or local storage
+    }, []);
+
+    return { guests, setGuests, isLoadingGuests };
+  };
+
+  const useCorporateClients = () => {
+    const [corporateClients, setCorporateClients] = useState<CorporateClient[]>([]);
+    const [isLoadingCorporateClients, setIsLoadingCorporateClients] = useState(false);
+
+    useEffect(() => {
+      // Load corporate clients from API or local storage
+    }, []);
+
+    return { corporateClients, setCorporateClients, isLoadingCorporateClients };
+  };
+
+  const useCategories = () => {
+    const [categories, setCategories] = useState<ProductCategory[]>([]);
+    const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+
+    useEffect(() => {
+      // Load categories from API or local storage
+    }, []);
+
+    return { categories, setCategories, isLoadingCategories };
+  };
+
+  const useSales = () => {
+    const [sales, setSales] = useState<Sale[]>([]);
+    const [isLoadingSales, setIsLoadingSales] = useState(false);
+
+    useEffect(() => {
+      // Load sales from API or local storage
+    }, []);
+
+    return { sales, setSales, isLoadingSales };
+  };
+
+  const usePaymentMethods = () => {
+    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+    const [isLoadingPaymentMethods, setIsLoadingPaymentMethods] = useState(false);
+
+    useEffect(() => {
+      // Load payment methods from API or local storage
+    }, []);
+
+    return { paymentMethods, setPaymentMethods, isLoadingPaymentMethods };
+  };
+
+  const { roomTypes, setRoomTypes, isLoadingRoomTypes } = useRoomTypes();
+  const { guests, setGuests, isLoadingGuests } = useGuests();
+  const { corporateClients, setCorporateClients, isLoadingCorporateClients } = useCorporateClients();
+  const { categories, setCategories, isLoadingCategories } = useCategories();
+  const { sales, setSales, isLoadingSales } = useSales();
+  const { paymentMethods, setPaymentMethods, isLoadingPaymentMethods } = usePaymentMethods();
+  
+  // Service bookings state
   const [serviceBookings, setServiceBookings] = useState<ServiceBooking[]>([]);
-  const [sales, setSales] = useState<Sale[]>([]);
 
-  // Estados de carga
-  const [isLoadingRoomTypes, setIsLoadingRoomTypes] = useState(false);
-  const [isLoadingGuests, setIsLoadingGuests] = useState(false);
-  const [isLoadingReservations, setIsLoadingReservations] = useState(false);
-  const [isLoadingCorporateClients, setIsLoadingCorporateClients] = useState(false);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  // Estados locales adicionales que se cargan desde loadAllData
+  const [products, setProducts] = useState<Product[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [locations, setLocations] = useState<InventoryLocation[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
-  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
   const [isLoadingInventory, setIsLoadingInventory] = useState(false);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
   const [isLoadingServices, setIsLoadingServices] = useState(false);
-  const [isLoadingServiceBookings, setIsLoadingServiceBookings] = useState(false);
-  const [isLoadingSales, setIsLoadingSales] = useState(false);
-
-  const [hotelSettings, setHotelSettings] = useState<HotelSettings>(() => ({
-    name: "Hotel Aurora",
-    address: "Av. Larco 123, Miraflores",
-    phone: "+51 987 654 321",
-    email: "contacto@hotelaurora.pe",
-    taxId: "20123456789",
-    currency: "PEN",
-    timezone: "America/Lima",
-    dateFormat: "DD/MM/YYYY",
-    language: "es",
-    checkInTime: "15:00",
-    checkOutTime: "12:00",
-    cancellationPolicy:
-      "Cancelacion gratuita hasta 24 horas antes del ingreso.",
-    taxRate: 18,
-    taxInclusive: true,
-  }));
+  const [isLoadingInvoices, setIsLoadingInvoices] = useState(false);
 
   const [planInfo] = useState<PlanInfo>(() => ({
     name: "Plan Pro",
@@ -170,77 +294,6 @@ export const HotelDataProvider = ({ children }: { children: ReactNode }) => {
     },
   ]);
 
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(() => [
-    { id: "pm-1", name: "Efectivo", type: "cash", status: "active" },
-    { id: "pm-2", name: "Tarjeta", type: "card", status: "active" },
-    { id: "pm-3", name: "Transferencia", type: "transfer", status: "active" },
-    { id: "pm-4", name: "Cortesia", type: "other", status: "inactive" },
-  ]);
-
-  const [invoices, setInvoices] = useState<Invoice[]>(() => [
-    {
-      id: "inv-1",
-      number: "F-1001",
-      date: todayStr,
-      clientName: "Carla Mendoza",
-      clientType: "guest",
-      reservationCode: "RSV-240101",
-      status: "paid",
-      items: [
-        {
-          id: "item-1",
-          description: "Hospedaje 2 noches",
-          quantity: 2,
-          unitPrice: 260,
-          total: 520,
-        },
-        {
-          id: "item-2",
-          description: "Consumo minibar",
-          quantity: 1,
-          unitPrice: 60,
-          total: 60,
-        },
-      ],
-      subtotal: 580,
-      tax: 104.4,
-      total: 684.4,
-      balance: 0,
-      payments: [
-        {
-          id: "pay-1",
-          amount: 684.4,
-          methodId: "pm-2",
-          methodName: "Tarjeta",
-          date: todayStr,
-        },
-      ],
-    },
-    {
-      id: "inv-2",
-      number: "F-1002",
-      date: todayStr,
-      clientName: "Luis Garcia",
-      clientType: "guest",
-      reservationCode: "RSV-240102",
-      status: "sent",
-      items: [
-        {
-          id: "item-3",
-          description: "Hospedaje 1 noche",
-          quantity: 1,
-          unitPrice: 320,
-          total: 320,
-        },
-      ],
-      subtotal: 320,
-      tax: 57.6,
-      total: 377.6,
-      balance: 377.6,
-      payments: [],
-    },
-  ]);
-
   // Load persisted hotel context
   useEffect(() => {
     const storedHotel = localStorage.getItem("hotel_current_id");
@@ -261,33 +314,33 @@ export const HotelDataProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("hotel_scope_mode", scopeMode);
   }, [scopeMode]);
 
-  // Cargar datos de las APIs
-  useEffect(() => {
-    loadAllData({
-      setRoomTypes,
-      setIsLoadingRoomTypes,
-      setGuests,
-      setIsLoadingGuests,
-      setReservations,
-      setIsLoadingReservations,
-      setCorporateClients,
-      setIsLoadingCorporateClients,
-      setCategories,
-      setIsLoadingCategories,
-      setProducts,
-      setIsLoadingProducts,
-      setLocations,
-      setIsLoadingLocations,
-      setInventory,
-      setIsLoadingInventory,
-      setServices,
-      setIsLoadingServices,
-      setServiceBookings,
-      setIsLoadingServiceBookings,
-      setSales,
-      setIsLoadingSales,
-    });
-  }, []);
+  // Cargar datos de las APIs - DISABLED: datos ahora vienen de hooks
+  // useEffect(() => {
+  //   loadAllData({
+  //     setRoomTypes,
+  //     setIsLoadingRoomTypes,
+  //     setGuests,
+  //     setIsLoadingGuests,
+  //     setReservations,
+  //     setIsLoadingReservations,
+  //     setCorporateClients,
+  //     setIsLoadingCorporateClients,
+  //     setCategories,
+  //     setIsLoadingCategories,
+  //     setProducts,
+  //     setIsLoadingProducts,
+  //     setLocations,
+  //     setIsLoadingLocations,
+  //     setInventory,
+  //     setIsLoadingInventory,
+  //     setServices,
+  //     setIsLoadingServices,
+  //     setServiceBookings,
+  //     setIsLoadingServiceBookings,
+  //     setSales,
+  //     setIsLoadingSales,
+  //   });
+  // }, []);
 
   const occupancyTrend = useMemo<OccupancyPoint[]>(() => {
     const anchor = new Date(`${todayStr}T00:00:00`);
@@ -315,7 +368,7 @@ export const HotelDataProvider = ({ children }: { children: ReactNode }) => {
   const { updateInventoryItem } = createInventoryActions(setInventory);
   const { updateHotelSettings } = createSettingsActions(setHotelSettings);
   const { addPaymentMethod, updatePaymentMethod } = createPaymentMethodActions(setPaymentMethods);
-  const { addInvoicePayment } = createInvoiceActions(setInvoices);
+  // Invoice actions removed - invoices come from useInvoices hook
   const { addReservation, updateReservation, completeCheckIn, completeCheckOut } = createReservationActions(
     setReservations,
     setRooms,
@@ -371,7 +424,6 @@ export const HotelDataProvider = ({ children }: { children: ReactNode }) => {
     updateHotelSettings,
     addPaymentMethod,
     updatePaymentMethod,
-    addInvoicePayment,
     addReservation,
     updateReservation,
     completeCheckIn,

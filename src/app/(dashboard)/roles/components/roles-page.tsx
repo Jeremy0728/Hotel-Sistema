@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useRoles } from "@/hooks/useRoles";
+import { useRoleOperations } from "../hooks/useRoleOperations";
 
 type Permission = {
   key: string;
@@ -63,43 +64,36 @@ const auditLog = [
 ];
 
 export default function RolesPage() {
-  const [search, setSearch] = useState("");
-  const [selectedRole, setSelectedRole] = useState("Recepción");
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([
-    "reservas.leer",
-    "reservas.crear",
-    "reservas.editar",
-    "habitaciones.leer",
-  ]);
+  // Obtener datos desde hooks individuales
+  const { roles: apiRoles, isLoading: rolesLoading } = useRoles({ limit: 100 });
 
-  const filteredTree = useMemo(() => {
-    const normalized = search.trim().toLowerCase();
-    if (!normalized) return permissionTree;
-    return permissionTree
-      .map((group) => ({
-        ...group,
-        permissions: group.permissions.filter((perm) =>
-          `${group.module} ${perm.label}`.toLowerCase().includes(normalized)
-        ),
-      }))
-      .filter((group) => group.permissions.length > 0);
-  }, [search]);
+  // Hook de operaciones de roles
+  const {
+    search,
+    setSearch,
+    selectedRoleId,
+    setSelectedRoleId,
+    selectedRole,
+    selectedPermissions,
+    filteredTree,
+    togglePermission,
+    toggleGroup,
+  } = useRoleOperations({
+    roles: apiRoles,
+    permissionTree,
+  });
 
-  const togglePermission = (key: string) => {
-    setSelectedPermissions((prev) =>
-      prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]
+  if (rolesLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3">
+          <div className="h-8 w-8 animate-spin mx-auto border-4 border-primary border-t-transparent rounded-full" />
+          <p className="text-sm text-neutral-500">Cargando roles...</p>
+        </div>
+      </div>
     );
-  };
+  }
 
-  const toggleGroup = (group: PermissionGroup) => {
-    const keys = group.permissions.map((perm) => perm.key);
-    const hasAll = keys.every((key) => selectedPermissions.includes(key));
-    if (hasAll) {
-      setSelectedPermissions((prev) => prev.filter((item) => !keys.includes(item)));
-    } else {
-      setSelectedPermissions((prev) => Array.from(new Set([...prev, ...keys])));
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -119,7 +113,7 @@ export default function RolesPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Badge variant="info">Rol activo: {selectedRole}</Badge>
+          <Badge variant="info">Rol activo: {selectedRole?.display_name || "Ninguno"}</Badge>
           <Input
             placeholder="Buscar permiso o módulo"
             value={search}
@@ -132,18 +126,16 @@ export default function RolesPage() {
       <Card className="p-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="space-y-3">
-            {["Recepción", "Operaciones", "Finanzas", "Admin", "Housekeeping"].map(
-              (role) => (
-                <Button
-                  key={role}
-                  variant={selectedRole === role ? "default" : "outline"}
-                  className="w-full justify-start"
-                  onClick={() => setSelectedRole(role)}
-                >
-                  {role}
-                </Button>
-              )
-            )}
+            {apiRoles.map((role) => (
+              <Button
+                key={role.id}
+                variant={selectedRoleId === role.id ? "default" : "outline"}
+                className="w-full justify-start"
+                onClick={() => setSelectedRoleId(role.id)}
+              >
+                {role.display_name}
+              </Button>
+            ))}
           </div>
           <div className="lg:col-span-2 space-y-4">
             {filteredTree.map((group) => {

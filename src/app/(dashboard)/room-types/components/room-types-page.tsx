@@ -1,96 +1,83 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import EmptyState from "@/components/hotel/empty-state";
-import { useHotelData } from "@/contexts/HotelDataContext";
-import { cn } from "@/lib/utils";
-import type { RoomType } from "@/types/hotel";
-import type { RoomTypeFormValues } from "@/lib/hotel-schemas";
+import { useRoomTypes } from "@/hooks/useRoomTypes";
+import { useRoomTypeOperations } from "../hooks/useRoomTypeOperations";
+import RoomTypeFiltersCard from "./room-type-filters-card";
+import RoomTypeTableRow from "./room-type-table-row";
 import RoomTypeForm from "./room-type-form";
-
-const statusOptions = [
-  { value: "all", label: "Todos" },
-  { value: "active", label: "Activo" },
-  { value: "inactive", label: "Inactivo" },
-];
-
-const formatRate = (value: number) => `S/ ${value}`;
+import type { RoomTypeFormValues } from "@/lib/hotel-schemas";
 
 export default function RoomTypesPage() {
-  const { roomTypes, addRoomType, updateRoomType, removeRoomType } = useHotelData();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingType, setEditingType] = useState<RoomType | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<RoomType | null>(null);
+  // Obtener datos desde hook useRoomTypes
+  const { roomTypes: apiRoomTypes, isLoading: roomTypesLoading } = useRoomTypes({ limit: 100 });
 
-  const filtered = useMemo(() => {
-    const query = search.toLowerCase();
-    return roomTypes.filter((type) => {
-      const matchesSearch =
-        type.name.toLowerCase().includes(query) ||
-        (type.description ?? "").toLowerCase().includes(query);
-      const matchesStatus = statusFilter === "all" ? true : type.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [roomTypes, search, statusFilter]);
-
-  const handleOpenCreate = () => {
-    setEditingType(null);
-    setDialogOpen(true);
+  // Funciones para agregar, actualizar y eliminar tipos de habitación (TODO: implementar con API real)
+  const handleAddRoomType = async (roomType: any) => {
+    // TODO: Llamar a tiposHabitacionApi.crear
+    console.log("Add room type:", roomType);
   };
 
-  const handleOpenEdit = (roomType: RoomType) => {
-    setEditingType(roomType);
-    setDialogOpen(true);
+  const handleUpdateRoomType = async (id: number, updates: any) => {
+    // TODO: Llamar a tiposHabitacionApi.actualizar
+    console.log("Update room type:", id, updates);
   };
 
-  const handleSubmit = (values: RoomTypeFormValues) => {
-    const amenities = values.amenities
-      ? values.amenities
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean)
-      : [];
-
-    if (editingType) {
-      updateRoomType(editingType.id, { ...values, amenities });
-    } else {
-      addRoomType({
-        id: `type-${Date.now()}`,
-        ...values,
-        amenities,
-      });
-    }
-
-    setDialogOpen(false);
-    setEditingType(null);
+  const handleRemoveRoomType = async (id: number) => {
+    // TODO: Llamar a tiposHabitacionApi.eliminar
+    console.log("Remove room type:", id);
   };
+
+  // Hook de operaciones de tipos de habitación
+  const {
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    dialogOpen,
+    editingType,
+    deleteTarget,
+    filteredRoomTypes,
+    handleOpenCreate,
+    handleOpenEdit,
+    handleCloseDialog,
+    handleSubmit,
+    handleOpenDelete,
+    handleCloseDelete,
+    handleConfirmDelete,
+  } = useRoomTypeOperations({
+    roomTypes: apiRoomTypes,
+    onAddRoomType: handleAddRoomType,
+    onUpdateRoomType: handleUpdateRoomType,
+    onRemoveRoomType: handleRemoveRoomType,
+  });
+
+  if (roomTypesLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3">
+          <div className="h-8 w-8 animate-spin mx-auto border-4 border-primary border-t-transparent rounded-full" />
+          <p className="text-sm text-neutral-500">Cargando tipos de habitación...</p>
+        </div>
+      </div>
+    );
+  }
 
   const defaultValues: RoomTypeFormValues = editingType
     ? {
         name: editingType.name,
         description: editingType.description ?? "",
-        maxGuests: editingType.maxGuests,
-        rateHour: editingType.rateHour,
-        rateDay: editingType.rateDay,
-        rateWeek: editingType.rateWeek,
-        rateMonth: editingType.rateMonth,
-        amenities: editingType.amenities.join(", "),
-        status: editingType.status,
+        maxGuests: editingType.max_occupancy,
+        rateHour: 0,
+        rateDay: parseFloat(editingType.base_price),
+        rateWeek: 0,
+        rateMonth: 0,
+        amenities: editingType.amenities ? Object.values(editingType.amenities).join(", ") : "",
+        status: editingType.is_active ? "active" : "inactive",
       }
     : {
         name: "",
@@ -106,41 +93,18 @@ export default function RoomTypesPage() {
 
   return (
     <div className="space-y-6">
-      <Card className="p-4 flex flex-col gap-4">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3 justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">Tipos de habitacion</h2>
-            <p className="text-sm text-neutral-500 dark:text-neutral-300">
-              Configura tarifas, capacidad y amenidades
-            </p>
-          </div>
-          <Button onClick={handleOpenCreate}>Agregar tipo</Button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Input
-            placeholder="Buscar por nombre o descripcion"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </Card>
+      <RoomTypeFiltersCard
+        search={search}
+        setSearch={setSearch}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        onOpenCreate={handleOpenCreate}
+      />
 
-      {filtered.length === 0 ? (
+      {filteredRoomTypes.length === 0 ? (
         <EmptyState
           title="Sin tipos registrados"
-          description="No hay tipos de habitacion para mostrar."
+          description="No hay tipos de habitación para mostrar."
           action={<Button onClick={handleOpenCreate}>Agregar tipo</Button>}
         />
       ) : (
@@ -158,66 +122,20 @@ export default function RoomTypesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((type) => (
-                <TableRow key={type.id}>
-                  <TableCell className="font-medium">{type.name}</TableCell>
-                  <TableCell className="text-sm text-neutral-500 dark:text-neutral-300">
-                    {type.description || "-"}
-                  </TableCell>
-                  <TableCell>{type.maxGuests} pax</TableCell>
-                  <TableCell className="text-xs text-neutral-500 dark:text-neutral-300">
-                    <div>Hora: {formatRate(type.rateHour)}</div>
-                    <div>Dia: {formatRate(type.rateDay)}</div>
-                    <div>Semana: {formatRate(type.rateWeek)}</div>
-                    <div>Mes: {formatRate(type.rateMonth)}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {type.amenities.length ? (
-                        type.amenities.map((amenity) => (
-                          <Badge key={amenity} className="rounded-full" variant="secondary">
-                            {amenity}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-xs text-neutral-400">-</span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      className={cn(
-                        "rounded-full",
-                        type.status === "active"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-neutral-200 text-neutral-700"
-                      )}
-                    >
-                      {type.status === "active" ? "Activo" : "Inactivo"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="ghost" onClick={() => handleOpenEdit(type)}>
-                        Editar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setDeleteTarget(type)}
-                      >
-                        Eliminar
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
+              {filteredRoomTypes.map((type) => (
+                <RoomTypeTableRow
+                  key={type.id}
+                  roomType={type}
+                  onEdit={handleOpenEdit}
+                  onDelete={handleOpenDelete}
+                />
               ))}
             </TableBody>
           </Table>
         </Card>
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={handleCloseDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
@@ -227,13 +145,13 @@ export default function RoomTypesPage() {
           <RoomTypeForm
             defaultValues={defaultValues}
             onSubmit={handleSubmit}
-            onCancel={() => setDialogOpen(false)}
+            onCancel={handleCloseDialog}
             submitLabel={editingType ? "Guardar cambios" : "Crear tipo"}
           />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+      <Dialog open={!!deleteTarget} onOpenChange={handleCloseDelete}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Confirmar eliminacion</DialogTitle>
@@ -243,18 +161,10 @@ export default function RoomTypesPage() {
             deshacer.
           </p>
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
+            <Button variant="ghost" onClick={handleCloseDelete}>
               Cancelar
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (deleteTarget) {
-                  removeRoomType(deleteTarget.id);
-                }
-                setDeleteTarget(null);
-              }}
-            >
+            <Button variant="destructive" onClick={handleConfirmDelete}>
               Eliminar
             </Button>
           </div>

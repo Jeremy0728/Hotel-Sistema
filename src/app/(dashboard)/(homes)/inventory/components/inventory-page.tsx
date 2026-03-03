@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,14 +15,12 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EmptyState from "@/components/hotel/empty-state";
-import { useHotelData } from "@/contexts/HotelDataContext";
 import { cn } from "@/lib/utils";
-import type {
-  InventoryItem,
-  InventoryLocation,
-  Product,
-  ProductCategory,
-} from "@/types/hotel";
+import { useProducts } from "@/hooks/useProducts";
+import { useProductCategories } from "@/hooks/useProductCategories";
+import { useInventoryLocations } from "@/hooks/useInventoryLocations";
+import { useInventory } from "@/hooks/useInventory";
+import { useInventoryOperations } from "../hooks/useInventoryOperations";
 import type {
   CategoryFormValues,
   LocationFormValues,
@@ -52,130 +49,131 @@ const statusBadgeClass = (active: boolean) =>
   active ? "bg-emerald-100 text-emerald-700" : "bg-neutral-200 text-neutral-700";
 
 export default function InventoryPage() {
+  // Obtener datos desde hooks individuales
+  const { products: apiProducts, isLoading: productsLoading } = useProducts({ limit: 100 });
+  const { categories: apiCategories, isLoading: categoriesLoading } = useProductCategories({ limit: 100 });
+  const { locations: apiLocations, isLoading: locationsLoading } = useInventoryLocations({ limit: 100 });
+  const { inventory: apiInventory, isLoading: inventoryLoading } = useInventory({ limit: 100 });
+
+  // Funciones para operaciones CRUD (TODO: implementar con APIs reales)
+  const handleAddProduct = async (product: any) => {
+    // TODO: Llamar a productosApi.crear
+    console.log("Add product:", product);
+  };
+
+  const handleUpdateProduct = async (id: number, updates: any) => {
+    // TODO: Llamar a productosApi.actualizar
+    console.log("Update product:", id, updates);
+  };
+
+  const handleAddCategory = async (category: any) => {
+    // TODO: Llamar a categoriasProductosApi.crear
+    console.log("Add category:", category);
+  };
+
+  const handleUpdateCategory = async (id: number, updates: any) => {
+    // TODO: Llamar a categoriasProductosApi.actualizar
+    console.log("Update category:", id, updates);
+  };
+
+  const handleAddLocation = async (location: any) => {
+    // TODO: Llamar a ubicacionesInventarioApi.crear
+    console.log("Add location:", location);
+  };
+
+  const handleUpdateLocation = async (id: number, updates: any) => {
+    // TODO: Llamar a ubicacionesInventarioApi.actualizar
+    console.log("Update location:", id, updates);
+  };
+
+  const handleUpdateInventory = async (id: number, updates: any) => {
+    // TODO: Llamar a inventarioApi.actualizar
+    console.log("Update inventory:", id, updates);
+  };
+
+  // Hook de operaciones de inventario
   const {
-    rooms,
-    categories,
-    products,
-    locations,
-    inventory,
-    addProduct,
-    updateProduct,
-    addCategory,
-    updateCategory,
-    addLocation,
-    updateLocation,
-    updateInventoryItem,
-  } = useHotelData();
+    activeTab,
+    setActiveTab,
+    productSearch,
+    setProductSearch,
+    productCategoryFilter,
+    setProductCategoryFilter,
+    productStatusFilter,
+    setProductStatusFilter,
+    filteredProducts,
+    productDialogOpen,
+    editingProduct,
+    handleOpenCreateProduct,
+    handleOpenEditProduct,
+    handleCloseProductDialog,
+    handleProductSubmit,
+    categorySearch,
+    setCategorySearch,
+    filteredCategories,
+    categoryDialogOpen,
+    editingCategory,
+    handleOpenCreateCategory,
+    handleOpenEditCategory,
+    handleCloseCategoryDialog,
+    handleCategorySubmit,
+    locationSearch,
+    setLocationSearch,
+    filteredLocations,
+    locationDialogOpen,
+    editingLocation,
+    handleOpenCreateLocation,
+    handleOpenEditLocation,
+    handleCloseLocationDialog,
+    handleLocationSubmit,
+    stockLocationId,
+    setStockLocationId,
+    stockItems,
+    stockDialogOpen,
+    adjustingItem,
+    handleOpenAdjustStock,
+    handleCloseStockDialog,
+    handleAdjustStock,
+  } = useInventoryOperations({
+    products: apiProducts,
+    categories: apiCategories,
+    locations: apiLocations,
+    inventory: apiInventory,
+    onAddProduct: handleAddProduct,
+    onUpdateProduct: handleUpdateProduct,
+    onAddCategory: handleAddCategory,
+    onUpdateCategory: handleUpdateCategory,
+    onAddLocation: handleAddLocation,
+    onUpdateLocation: handleUpdateLocation,
+    onUpdateInventory: handleUpdateInventory,
+  });
 
-  const [activeTab, setActiveTab] = useState("products");
-
-  const [productSearch, setProductSearch] = useState("");
-  const [productCategoryFilter, setProductCategoryFilter] = useState("all");
-  const [productStatusFilter, setProductStatusFilter] = useState("all");
-
-  const [categorySearch, setCategorySearch] = useState("");
-  const [locationSearch, setLocationSearch] = useState("");
-  const [stockLocationId, setStockLocationId] = useState(
-    locations[0]?.id ?? ""
-  );
-
-  const [productDialogOpen, setProductDialogOpen] = useState(false);
-  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
-  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
-  const [stockDialogOpen, setStockDialogOpen] = useState(false);
-
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [editingCategory, setEditingCategory] = useState<ProductCategory | null>(
-    null
-  );
-  const [editingLocation, setEditingLocation] =
-    useState<InventoryLocation | null>(null);
-  const [adjustingItem, setAdjustingItem] =
-    useState<InventoryItem | null>(null);
-
-  const filteredProducts = useMemo(() => {
-    const query = productSearch.toLowerCase();
-    return products.filter((product) => {
-      const matchesSearch =
-        product.name.toLowerCase().includes(query) ||
-        product.sku.toLowerCase().includes(query);
-      const matchesCategory =
-        productCategoryFilter === "all"
-          ? true
-          : product.categoryId === productCategoryFilter;
-      const matchesStatus =
-        productStatusFilter === "all"
-          ? true
-          : product.status === productStatusFilter;
-      return matchesSearch && matchesCategory && matchesStatus;
-    });
-  }, [products, productSearch, productCategoryFilter, productStatusFilter]);
-
-  const filteredCategories = useMemo(() => {
-    const query = categorySearch.toLowerCase();
-    return categories.filter((category) =>
-      category.name.toLowerCase().includes(query)
+  if (productsLoading || categoriesLoading || locationsLoading || inventoryLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3">
+          <div className="h-8 w-8 animate-spin mx-auto border-4 border-primary border-t-transparent rounded-full" />
+          <p className="text-sm text-neutral-500">Cargando inventario...</p>
+        </div>
+      </div>
     );
-  }, [categories, categorySearch]);
-
-  const filteredLocations = useMemo(() => {
-    const query = locationSearch.toLowerCase();
-    return locations.filter((location) =>
-      location.name.toLowerCase().includes(query)
-    );
-  }, [locations, locationSearch]);
-
-  const stockItems = useMemo(() => {
-    if (!stockLocationId) return [];
-    return inventory.filter((item) => item.locationId === stockLocationId);
-  }, [inventory, stockLocationId]);
-
-  const openCreateProduct = () => {
-    setEditingProduct(null);
-    setProductDialogOpen(true);
-  };
-
-  const openEditProduct = (product: Product) => {
-    setEditingProduct(product);
-    setProductDialogOpen(true);
-  };
-
-  const handleProductSubmit = (values: ProductFormValues) => {
-    const category = categories.find((item) => item.id === values.categoryId);
-    const categoryName = category ? category.name : "Sin categoria";
-
-    if (editingProduct) {
-      updateProduct(editingProduct.id, {
-        ...values,
-        categoryName,
-      });
-    } else {
-      addProduct({
-        id: `prod-${Date.now()}`,
-        ...values,
-        categoryName,
-      });
-    }
-
-    setProductDialogOpen(false);
-    setEditingProduct(null);
-  };
+  }
 
   const productDefaultValues: ProductFormValues = editingProduct
     ? {
         name: editingProduct.name,
-        sku: editingProduct.sku,
-        categoryId: editingProduct.categoryId,
-        price: editingProduct.price,
-        cost: editingProduct.cost,
-        status: editingProduct.status,
-        trackStock: editingProduct.trackStock,
+        sku: editingProduct.sku || "",
+        categoryId: String(editingProduct.category_id),
+        price: parseFloat(editingProduct.price),
+        cost: editingProduct.cost ? parseFloat(editingProduct.cost) : 0,
+        status: editingProduct.is_active ? "active" : "inactive",
+        trackStock: true,
         description: editingProduct.description ?? "",
       }
     : {
         name: "",
         sku: "",
-        categoryId: categories[0]?.id ?? "",
+        categoryId: apiCategories[0]?.id?.toString() ?? "",
         price: 0,
         cost: 0,
         status: "active",
@@ -183,35 +181,11 @@ export default function InventoryPage() {
         description: "",
       };
 
-  const openCreateCategory = () => {
-    setEditingCategory(null);
-    setCategoryDialogOpen(true);
-  };
-
-  const openEditCategory = (category: ProductCategory) => {
-    setEditingCategory(category);
-    setCategoryDialogOpen(true);
-  };
-
-  const handleCategorySubmit = (values: CategoryFormValues) => {
-    if (editingCategory) {
-      updateCategory(editingCategory.id, values);
-    } else {
-      addCategory({
-        id: `cat-${Date.now()}`,
-        ...values,
-      });
-    }
-
-    setCategoryDialogOpen(false);
-    setEditingCategory(null);
-  };
-
   const categoryDefaultValues: CategoryFormValues = editingCategory
     ? {
         name: editingCategory.name,
         description: editingCategory.description ?? "",
-        status: editingCategory.status,
+        status: editingCategory.is_active ? "active" : "inactive",
       }
     : {
         name: "",
@@ -219,49 +193,12 @@ export default function InventoryPage() {
         status: "active",
       };
 
-  const openCreateLocation = () => {
-    setEditingLocation(null);
-    setLocationDialogOpen(true);
-  };
-
-  const openEditLocation = (location: InventoryLocation) => {
-    setEditingLocation(location);
-    setLocationDialogOpen(true);
-  };
-
-  const handleLocationSubmit = (values: LocationFormValues) => {
-    const room = rooms.find((item) => item.id === values.roomId);
-    const roomNumber = room?.number;
-
-    const payload = {
-      ...values,
-      roomId: values.type === "minibar" ? values.roomId : undefined,
-      roomNumber: values.type === "minibar" ? roomNumber : undefined,
-    };
-
-    if (editingLocation) {
-      updateLocation(editingLocation.id, payload);
-    } else {
-      addLocation({
-        id: `loc-${Date.now()}`,
-        ...payload,
-      });
-    }
-
-    if (!stockLocationId && locations.length === 0) {
-      setStockLocationId(editingLocation?.id ?? "");
-    }
-
-    setLocationDialogOpen(false);
-    setEditingLocation(null);
-  };
-
   const locationDefaultValues: LocationFormValues = editingLocation
     ? {
         name: editingLocation.name,
-        type: editingLocation.type,
-        roomId: editingLocation.roomId ?? "",
-        status: editingLocation.status,
+        type: editingLocation.type as any,
+        roomId: editingLocation.room_id?.toString() ?? "",
+        status: editingLocation.is_active ? "active" : "inactive",
       }
     : {
         name: "",
@@ -270,29 +207,17 @@ export default function InventoryPage() {
         status: "active",
       };
 
-  const openAdjustStock = (item: InventoryItem) => {
-    setAdjustingItem(item);
-    setStockDialogOpen(true);
-  };
-
-  const handleAdjustStock = (values: StockAdjustValues) => {
-    if (!adjustingItem) return;
-    updateInventoryItem(adjustingItem.id, values);
-    setStockDialogOpen(false);
-    setAdjustingItem(null);
-  };
-
   const stockDefaultValues: StockAdjustValues = adjustingItem
     ? {
-        stock: adjustingItem.stock,
-        minStock: adjustingItem.minStock,
+        stock: adjustingItem.quantity,
+        minStock: adjustingItem.min_stock ?? 0,
       }
     : {
         stock: 0,
         minStock: 0,
       };
 
-  const selectedLocation = locations.find((loc) => loc.id === stockLocationId);
+  const selectedLocation = apiLocations.find((loc) => loc.id === Number(stockLocationId));
 
   return (
     <div className="space-y-6">
@@ -306,13 +231,13 @@ export default function InventoryPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             {activeTab === "products" ? (
-              <Button onClick={openCreateProduct}>Agregar producto</Button>
+              <Button onClick={handleOpenCreateProduct}>Agregar producto</Button>
             ) : null}
             {activeTab === "categories" ? (
-              <Button onClick={openCreateCategory}>Agregar categoria</Button>
+              <Button onClick={handleOpenCreateCategory}>Agregar categoria</Button>
             ) : null}
             {activeTab === "locations" ? (
-              <Button onClick={openCreateLocation}>Agregar ubicacion</Button>
+              <Button onClick={handleOpenCreateLocation}>Agregar ubicacion</Button>
             ) : null}
           </div>
         </div>
@@ -343,8 +268,8 @@ export default function InventoryPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
+                  {apiCategories.map((category) => (
+                    <SelectItem key={category.id} value={String(category.id)}>
                       {category.name}
                     </SelectItem>
                   ))}
@@ -372,7 +297,7 @@ export default function InventoryPage() {
             <EmptyState
               title="Sin productos"
               description="No hay productos que coincidan con los filtros actuales."
-              action={<Button onClick={openCreateProduct}>Agregar producto</Button>}
+              action={<Button onClick={handleOpenCreateProduct}>Agregar producto</Button>}
             />
           ) : (
             <Card className="p-4">
@@ -392,49 +317,48 @@ export default function InventoryPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredProducts.map((product) => {
+                    const price = parseFloat(product.price);
+                    const cost = product.cost ? parseFloat(product.cost) : 0;
                     const margin =
-                      product.price > 0
-                        ? Math.round(
-                            ((product.price - product.cost) / product.price) * 100
-                          )
+                      price > 0
+                        ? Math.round(((price - cost) / price) * 100)
                         : 0;
+                    const category = apiCategories.find(c => c.id === product.category_id);
                     return (
                       <TableRow key={product.id}>
                         <TableCell className="font-medium">
                           {product.name}
                         </TableCell>
-                        <TableCell>{product.sku}</TableCell>
-                        <TableCell>{product.categoryName}</TableCell>
-                        <TableCell>S/ {product.price}</TableCell>
-                        <TableCell>S/ {product.cost}</TableCell>
+                        <TableCell>{product.sku || "-"}</TableCell>
+                        <TableCell>{category?.name || "Sin categoría"}</TableCell>
+                        <TableCell>S/ {price.toFixed(2)}</TableCell>
+                        <TableCell>S/ {cost.toFixed(2)}</TableCell>
                         <TableCell>{margin}%</TableCell>
                         <TableCell>
                           <Badge
                             className={cn(
                               "rounded-full",
-                              statusBadgeClass(product.status === "active")
+                              statusBadgeClass(product.is_active)
                             )}
                           >
-                            {product.status === "active" ? "Activo" : "Inactivo"}
+                            {product.is_active ? "Activo" : "Inactivo"}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge
                             className={cn(
                               "rounded-full",
-                              product.trackStock
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-neutral-200 text-neutral-700"
+                              "bg-emerald-100 text-emerald-700"
                             )}
                           >
-                            {product.trackStock ? "Requiere" : "No aplica"}
+                            Requiere
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => openEditProduct(product)}
+                            onClick={() => handleOpenEditProduct(product)}
                           >
                             Editar
                           </Button>
@@ -461,7 +385,7 @@ export default function InventoryPage() {
             <EmptyState
               title="Sin categorias"
               description="No hay categorias disponibles."
-              action={<Button onClick={openCreateCategory}>Agregar categoria</Button>}
+              action={<Button onClick={handleOpenCreateCategory}>Agregar categoria</Button>}
             />
           ) : (
             <Card className="p-4">
@@ -476,8 +400,8 @@ export default function InventoryPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredCategories.map((category) => {
-                    const count = products.filter(
-                      (product) => product.categoryId === category.id
+                    const count = apiProducts.filter(
+                      (product) => product.category_id === category.id
                     ).length;
                     return (
                       <TableRow key={category.id}>
@@ -489,17 +413,17 @@ export default function InventoryPage() {
                           <Badge
                             className={cn(
                               "rounded-full",
-                              statusBadgeClass(category.status === "active")
+                              statusBadgeClass(category.is_active)
                             )}
                           >
-                            {category.status === "active" ? "Activa" : "Inactiva"}
+                            {category.is_active ? "Activa" : "Inactiva"}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => openEditCategory(category)}
+                            onClick={() => handleOpenEditCategory(category)}
                           >
                             Editar
                           </Button>
@@ -526,7 +450,7 @@ export default function InventoryPage() {
             <EmptyState
               title="Sin ubicaciones"
               description="No hay ubicaciones registradas."
-              action={<Button onClick={openCreateLocation}>Agregar ubicacion</Button>}
+              action={<Button onClick={handleOpenCreateLocation}>Agregar ubicacion</Button>}
             />
           ) : (
             <Card className="p-4">
@@ -550,23 +474,23 @@ export default function InventoryPage() {
                         {locationTypeLabels[location.type] ?? location.type}
                       </TableCell>
                       <TableCell>
-                        {location.roomNumber ? `#${location.roomNumber}` : "-"}
+                        {location.room_id ? `#${location.room_id}` : "-"}
                       </TableCell>
                       <TableCell>
                         <Badge
                           className={cn(
                             "rounded-full",
-                            statusBadgeClass(location.status === "active")
+                            statusBadgeClass(location.is_active)
                           )}
                         >
-                          {location.status === "active" ? "Activa" : "Inactiva"}
+                          {location.is_active ? "Activa" : "Inactiva"}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => openEditLocation(location)}
+                          onClick={() => handleOpenEditLocation(location)}
                         >
                           Editar
                         </Button>
@@ -590,8 +514,8 @@ export default function InventoryPage() {
                   <SelectValue placeholder="Selecciona ubicacion" />
                 </SelectTrigger>
                 <SelectContent>
-                  {locations.map((location) => (
-                    <SelectItem key={location.id} value={location.id}>
+                  {apiLocations.map((location) => (
+                    <SelectItem key={location.id} value={String(location.id)}>
                       {location.name}
                     </SelectItem>
                   ))}
@@ -629,37 +553,41 @@ export default function InventoryPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {stockItems.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">
-                        {item.productName}
-                      </TableCell>
-                      <TableCell>{item.sku}</TableCell>
-                      <TableCell>{item.stock}</TableCell>
-                      <TableCell>{item.minStock}</TableCell>
-                      <TableCell>
-                        <Badge
-                          className={cn(
-                            "rounded-full",
-                            item.stock <= item.minStock
-                              ? "bg-red-100 text-red-700"
-                              : "bg-emerald-100 text-emerald-700"
-                          )}
-                        >
-                          {item.stock <= item.minStock ? "Bajo" : "OK"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => openAdjustStock(item)}
-                        >
-                          Ajustar
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {stockItems.map((item) => {
+                    const product = apiProducts.find(p => p.id === item.product_id);
+                    const minStock = item.min_stock ?? 0;
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">
+                          {product?.name || "Producto desconocido"}
+                        </TableCell>
+                        <TableCell>{product?.sku || "-"}</TableCell>
+                        <TableCell>{item.quantity}</TableCell>
+                        <TableCell>{minStock}</TableCell>
+                        <TableCell>
+                          <Badge
+                            className={cn(
+                              "rounded-full",
+                              item.quantity <= minStock
+                                ? "bg-red-100 text-red-700"
+                                : "bg-emerald-100 text-emerald-700"
+                            )}
+                          >
+                            {item.quantity <= minStock ? "Bajo" : "OK"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleOpenAdjustStock(item)}
+                          >
+                            Ajustar
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </Card>
@@ -667,7 +595,7 @@ export default function InventoryPage() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
+      <Dialog open={productDialogOpen} onOpenChange={handleCloseProductDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
@@ -676,15 +604,15 @@ export default function InventoryPage() {
           </DialogHeader>
           <InventoryProductForm
             defaultValues={productDefaultValues}
-            categories={categories}
+            categories={apiCategories as any}
             onSubmit={handleProductSubmit}
-            onCancel={() => setProductDialogOpen(false)}
+            onCancel={handleCloseProductDialog}
             submitLabel={editingProduct ? "Guardar cambios" : "Crear producto"}
           />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
+      <Dialog open={categoryDialogOpen} onOpenChange={handleCloseCategoryDialog}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>
@@ -694,13 +622,13 @@ export default function InventoryPage() {
           <InventoryCategoryForm
             defaultValues={categoryDefaultValues}
             onSubmit={handleCategorySubmit}
-            onCancel={() => setCategoryDialogOpen(false)}
+            onCancel={handleCloseCategoryDialog}
             submitLabel={editingCategory ? "Guardar cambios" : "Crear categoria"}
           />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
+      <Dialog open={locationDialogOpen} onOpenChange={handleCloseLocationDialog}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>
@@ -709,15 +637,15 @@ export default function InventoryPage() {
           </DialogHeader>
           <InventoryLocationForm
             defaultValues={locationDefaultValues}
-            rooms={rooms}
+            rooms={[]}
             onSubmit={handleLocationSubmit}
-            onCancel={() => setLocationDialogOpen(false)}
+            onCancel={handleCloseLocationDialog}
             submitLabel={editingLocation ? "Guardar cambios" : "Crear ubicacion"}
           />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={stockDialogOpen} onOpenChange={setStockDialogOpen}>
+      <Dialog open={stockDialogOpen} onOpenChange={handleCloseStockDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Ajustar stock</DialogTitle>
@@ -725,7 +653,7 @@ export default function InventoryPage() {
           <InventoryStockAdjustForm
             defaultValues={stockDefaultValues}
             onSubmit={handleAdjustStock}
-            onCancel={() => setStockDialogOpen(false)}
+            onCancel={handleCloseStockDialog}
             submitLabel="Actualizar stock"
           />
         </DialogContent>

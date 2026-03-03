@@ -1,31 +1,7 @@
 import { useCallback } from 'react';
 import useSWR from 'swr';
-import { reservasApi } from '@/apis/reservas.api';
+import { reservasApi, type Reserva, type ResponseReservas } from '@/apis/reservas.api';
 import { ApiError } from '@/types/api';
-
-interface Reservation {
-  id: number;
-  confirmation_code: string;
-  guest_id: number;
-  room_id: number;
-  check_in_date: string;
-  check_out_date: string;
-  adults: number;
-  children: number;
-  total_amount: string;
-  status: "pending" | "confirmed" | "checked_in" | "checked_out" | "cancelled";
-  special_requests?: string;
-  huesped?: {
-    nombres: string;
-    apellido_paterno: string;
-    apellido_materno?: string;
-    email: string;
-  };
-  habitacion?: {
-    number: string;
-    tipo?: string;
-  };
-}
 
 interface UseReservationsOptions {
   page?: number;
@@ -37,7 +13,7 @@ interface UseReservationsOptions {
 }
 
 interface UseReservationsReturn {
-  reservations: Reservation[];
+  reservations: Reserva[];
   total: number;
   page: number;
   totalPages: number;
@@ -79,13 +55,7 @@ export function useReservations(options: UseReservationsOptions = {}): UseReserv
 
   // Usar SWR para obtener los datos
   const { data, error, isLoading, mutate } = useSWR<
-    {
-      ok: boolean;
-      reservas: Reservation[];
-      total: number;
-      page: number;
-      totalPages: number;
-    },
+    ResponseReservas,
     ApiError
   >(
     swrKey,
@@ -132,7 +102,7 @@ export function useReservation(id: number | null) {
   const { data, error, isLoading, mutate } = useSWR<
     {
       ok: boolean;
-      reserva: Reservation;
+      reserva: Reserva;
     } | null,
     ApiError
   >(swrKey, fetcher, {
@@ -154,7 +124,7 @@ export function useReservation(id: number | null) {
  * Hook para obtener reservas activas (checked_in)
  */
 export function useActiveReservations() {
-  return useReservations({ status: 'checked_in', limit: 1000 });
+  return useReservations({ status: 'checked_in', limit: 100 });
 }
 
 /**
@@ -166,20 +136,14 @@ export function useTodayReservations() {
   const swrKey = `reservations-today-${today}`;
 
   const fetcher = async () => {
-    const response = await reservasApi.traerTodos(1, 1000, {
+    const response = await reservasApi.traerTodos(1, 100, {
       check_in_date: today,
     });
     return response;
   };
 
   const { data, error, isLoading, mutate } = useSWR<
-    {
-      ok: boolean;
-      reservas: Reservation[];
-      total: number;
-      page: number;
-      totalPages: number;
-    },
+    ResponseReservas,
     ApiError
   >(swrKey, fetcher, {
     revalidateOnFocus: true,

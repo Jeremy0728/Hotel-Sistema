@@ -1,131 +1,82 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import MetricCard from "@/components/hotel/metric-card";
-import InvoiceStatusBadge from "@/components/hotel/invoice-status-badge";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import EmptyState from "@/components/hotel/empty-state";
-import { useHotelData } from "@/contexts/HotelDataContext";
-import type { Invoice } from "@/types/hotel";
-import type { InvoicePaymentValues } from "@/lib/hotel-schemas";
-import { CircleDollarSign, AlertTriangle, Wallet } from "lucide-react";
+import { useInvoices } from "@/hooks/useInvoices";
+import { useInvoiceOperations } from "../hooks/useInvoiceOperations";
+import InvoiceMetrics from "./invoice-metrics";
+import InvoiceFiltersCard from "./invoice-filters-card";
+import InvoiceTableRow from "./invoice-table-row";
 import InvoicePaymentDialog from "./invoice-payment-dialog";
 
-const statusOptions = [
-  { value: "all", label: "Todos" },
-  { value: "draft", label: "Borrador" },
-  { value: "sent", label: "Enviada" },
-  { value: "paid", label: "Pagada" },
-  { value: "overdue", label: "Vencida" },
-  { value: "cancelled", label: "Cancelada" },
-];
-
 export default function InvoicesPage() {
-  const { invoices, paymentMethods, addInvoicePayment } = useHotelData();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [activeInvoice, setActiveInvoice] = useState<Invoice | null>(null);
-  const [paymentOpen, setPaymentOpen] = useState(false);
+  // Obtener datos desde hooks individuales
+  const { invoices: apiInvoices, isLoading: invoicesLoading } = useInvoices({ limit: 100 });
 
-  const filteredInvoices = useMemo(() => {
-    const query = search.toLowerCase();
-    return invoices.filter((invoice) => {
-      const matchesSearch =
-        invoice.number.toLowerCase().includes(query) ||
-        invoice.clientName.toLowerCase().includes(query) ||
-        (invoice.reservationCode?.toLowerCase().includes(query) ?? false);
-      const matchesStatus = statusFilter === "all" ? true : invoice.status === statusFilter;
-      const matchesFrom = dateFrom ? invoice.date >= dateFrom : true;
-      const matchesTo = dateTo ? invoice.date <= dateTo : true;
-      return matchesSearch && matchesStatus && matchesFrom && matchesTo;
-    });
-  }, [invoices, search, statusFilter, dateFrom, dateTo]);
+  // TODO: Obtener métodos de pago desde API cuando esté disponible
+  const paymentMethods: any[] = [];
 
-  const totalBilled = invoices.reduce((sum, invoice) => sum + invoice.total, 0);
-  const totalPending = invoices.reduce((sum, invoice) => sum + invoice.balance, 0);
-  const totalOverdue = invoices
-    .filter((invoice) => invoice.status === "overdue")
-    .reduce((sum, invoice) => sum + invoice.balance, 0);
-
-  const handleOpenPayment = (invoice: Invoice) => {
-    setActiveInvoice(invoice);
-    setPaymentOpen(true);
+  // Función para agregar pago (TODO: implementar con API real)
+  const handleAddPayment = async (invoiceId: number, payment: any) => {
+    // TODO: Llamar a facturasApi para registrar pago
+    console.log("Add payment:", invoiceId, payment);
   };
 
-  const handlePaymentSubmit = (values: InvoicePaymentValues) => {
-    if (!activeInvoice) return;
-    const method = paymentMethods.find((item) => item.id === values.methodId);
-    addInvoicePayment(activeInvoice.id, {
-      amount: values.amount,
-      methodId: values.methodId,
-      methodName: method?.name ?? "Metodo",
-      reference: values.reference,
-      date: values.date,
-      notes: values.notes,
-    });
-  };
+  // Hook de operaciones de facturas
+  const {
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    dateFrom,
+    setDateFrom,
+    dateTo,
+    setDateTo,
+    activeInvoice,
+    paymentOpen,
+    filteredInvoices,
+    totalBilled,
+    totalPending,
+    totalOverdue,
+    handleOpenPayment,
+    handleClosePayment,
+    handlePaymentSubmit,
+  } = useInvoiceOperations({
+    invoices: apiInvoices,
+    paymentMethods,
+    onAddPayment: handleAddPayment,
+  });
+
+  if (invoicesLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3">
+          <div className="h-8 w-8 animate-spin mx-auto border-4 border-primary border-t-transparent rounded-full" />
+          <p className="text-sm text-neutral-500">Cargando facturas...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <MetricCard
-          title="Total facturado"
-          value={`S/ ${totalBilled.toFixed(2)}`}
-          description="Incluye impuestos"
-          icon={CircleDollarSign}
-        />
-        <MetricCard
-          title="Pendiente de cobro"
-          value={`S/ ${totalPending.toFixed(2)}`}
-          description="Balance total"
-          icon={Wallet}
-          accentClassName="bg-yellow-100 text-yellow-700"
-        />
-        <MetricCard
-          title="Vencido"
-          value={`S/ ${totalOverdue.toFixed(2)}`}
-          description="Facturas vencidas"
-          icon={AlertTriangle}
-          accentClassName="bg-red-100 text-red-700"
-        />
-      </div>
+      <InvoiceMetrics
+        totalBilled={totalBilled}
+        totalPending={totalPending}
+        totalOverdue={totalOverdue}
+      />
 
-      <Card className="p-4 flex flex-col gap-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <Input
-            placeholder="Buscar por factura o cliente"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />
-          <Input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
-        </div>
-      </Card>
+      <InvoiceFiltersCard
+        search={search}
+        setSearch={setSearch}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        dateFrom={dateFrom}
+        setDateFrom={setDateFrom}
+        dateTo={dateTo}
+        setDateTo={setDateTo}
+      />
 
       {filteredInvoices.length === 0 ? (
         <EmptyState
@@ -149,32 +100,11 @@ export default function InvoicesPage() {
             </TableHeader>
             <TableBody>
               {filteredInvoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">{invoice.number}</TableCell>
-                  <TableCell>{invoice.clientName}</TableCell>
-                  <TableCell>{invoice.reservationCode ?? "-"}</TableCell>
-                  <TableCell>{invoice.date}</TableCell>
-                  <TableCell>S/ {invoice.total.toFixed(2)}</TableCell>
-                  <TableCell>S/ {invoice.balance.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <InvoiceStatusBadge status={invoice.status} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="ghost" asChild>
-                        <Link href={`/invoices/${invoice.id}`}>Ver detalle</Link>
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleOpenPayment(invoice)}
-                        disabled={invoice.balance <= 0}
-                      >
-                        Registrar pago
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                <InvoiceTableRow
+                  key={invoice.id}
+                  invoice={invoice}
+                  onOpenPayment={handleOpenPayment}
+                />
               ))}
             </TableBody>
           </Table>
@@ -183,8 +113,8 @@ export default function InvoicesPage() {
 
       <InvoicePaymentDialog
         open={paymentOpen}
-        onOpenChange={setPaymentOpen}
-        invoice={activeInvoice}
+        onOpenChange={handleClosePayment}
+        invoice={activeInvoice as any}
         paymentMethods={paymentMethods}
         onSubmit={handlePaymentSubmit}
       />

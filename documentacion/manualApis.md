@@ -34,6 +34,8 @@
 30. [Servicios Adicionales](#servicios-adicionales)
 31. [Reservas de Servicios](#reservas-de-servicios)
 
+---
+
 ## Introducción
 
 Este manual documenta todas las APIs disponibles en el sistema de gestión hotelera. El sistema utiliza una arquitectura multi-tenant donde cada hotel tiene su propia base de datos.
@@ -689,7 +691,78 @@ Base URL: `/api/planes`
   "msg": "Módulo removido correctamente"
 }
 ```
+## Tipos de Documento (Document Types)
 
+Base URL: `/api/tipos-documento`
+
+**Autenticación:** Todas las rutas requieren token JWT
+
+**Descripción:** Este módulo gestiona los tipos de documento de identidad disponibles en el sistema (DNI, Pasaporte, Carné de Extranjería, etc.).
+
+### 1. Obtener Todos los Tipos de Documento
+
+**Endpoint:** `GET /api/tipos-documento/traer-todos`
+
+**Descripción:** Obtiene lista de tipos de documento con paginación y filtros.
+
+**Permiso Requerido:** `catalogos.leer`
+
+**Query Parameters:**
+- `page` (opcional): Número de página (default: 1)
+- `limit` (opcional): Cantidad de resultados por página (default: 10, max: 100)
+- `is_active` (opcional): Filtrar por estado activo (true/false)
+
+**Ejemplo de Request:**
+```
+GET /api/tipos-documento/traer-todos?page=1&limit=10&is_active=true
+```
+
+**Respuesta Exitosa (200):**
+```json
+{
+  "ok": true,
+  "documentTypes": [
+    {
+      "id": 1,
+      "code": "DNI",
+      "name": "Documento Nacional de Identidad",
+      "description": "Documento de identidad para ciudadanos peruanos",
+      "is_active": true
+    },
+    {
+      "id": 2,
+      "code": "CE",
+      "name": "Carné de Extranjería",
+      "description": "Documento para extranjeros residentes en Perú",
+      "is_active": true
+    },
+    {
+      "id": 3,
+      "code": "PASSPORT",
+      "name": "Pasaporte",
+      "description": "Documento de viaje internacional",
+      "is_active": true
+    },
+    {
+      "id": 4,
+      "code": "RUC",
+      "name": "Registro Único de Contribuyentes",
+      "description": "Documento de identificación tributaria",
+      "is_active": true
+    }
+  ],
+  "totalCount": 4,
+  "currentPage": 1,
+  "totalPages": 1
+}
+```
+
+**Notas:**
+- Los resultados están ordenados alfabéticamente por nombre
+- Por defecto muestra todos los tipos de documento (activos e inactivos)
+- Use el parámetro `is_active=true` para obtener solo los tipos activos
+
+---
 ---
 
 ## Catálogo de Módulos
@@ -1326,6 +1399,13 @@ Base URL: `/api/habitaciones`
 - `limit`: Registros por página (default: 10)
 - `status`: Filtrar por estado (`available`, `occupied`, `maintenance`)
 
+**Campos Adicionales en la Respuesta:**
+- `type`: Nombre del tipo de habitación (extraído de `roomType.name`)
+- `activeReservation`: Objeto con datos de la reserva activa (estados `confirmed` o `checked_in`), incluye:
+  - `guestName`: Nombre completo del huésped que reservó
+  - Datos de la reserva (código, fechas, estado, adultos, niños, monto)
+  - Si no hay reserva activa, este campo es `null`
+
 **Ejemplo:**
 ```
 GET /api/habitaciones/traer-todos?status=available&page=1&limit=20
@@ -1342,20 +1422,44 @@ GET /api/habitaciones/traer-todos?status=available&page=1&limit=20
       "room_type_id": 1,
       "floor": 1,
       "status": "available",
+      "type": "Doble",
       "notes": null,
       "is_active": true,
       "created_at": "2024-01-01T00:00:00.000Z",
       "updated_at": "2024-01-01T00:00:00.000Z",
+      "activeReservation": null,
       "roomType": {
         "id": 1,
         "name": "Doble",
         "description": "Habitación doble estándar",
-        "max_occupancy": 2,
-        "amenities": {
-          "wifi": true,
-          "tv": true,
-          "minibar": true
-        }
+        "max_occupancy": 2
+      }
+    },
+    {
+      "id": 2,
+      "number": "102",
+      "room_type_id": 1,
+      "floor": 1,
+      "status": "occupied",
+      "type": "Doble",
+      "notes": null,
+      "is_active": true,
+      "activeReservation": {
+        "id": 45,
+        "confirmation_code": "RES-2026-001",
+        "check_in_date": "2026-02-14",
+        "check_out_date": "2026-02-16",
+        "status": "checked_in",
+        "adults": 2,
+        "children": 0,
+        "total_amount": "250.00",
+        "guestName": "Juan Pérez García"
+      },
+      "roomType": {
+        "id": 1,
+        "name": "Doble",
+        "description": "Habitación doble estándar",
+        "max_occupancy": 2
       }
     }
   ],
@@ -1388,13 +1492,14 @@ GET /api/habitaciones/traer-todos?status=available&page=1&limit=20
     "room_type_id": 1,
     "floor": 1,
     "status": "available",
+    "type": "Doble",
     "notes": null,
     "is_active": true,
+    "activeReservation": null,
     "roomType": {
       "id": 1,
       "name": "Doble",
-      "max_occupancy": 2,
-      "amenities": {...}
+      "max_occupancy": 2
     }
   }
 }
@@ -1565,6 +1670,9 @@ Base URL: `/api/huespedes`
 - `limit` (opcional): Registros por página (default: 10, max: 100)
 - `search` (opcional): Término de búsqueda (nombres, apellidos, documento, email)
 
+**Campo Adicional en la Respuesta:**
+- `document_type`: Nombre del tipo de documento (extraído de `documentType.name`). Si el huésped no tiene tipo de documento asignado, este campo es `null`
+
 **Respuesta Exitosa (200):**
 ```json
 {
@@ -1577,6 +1685,7 @@ Base URL: `/api/huespedes`
       "apellido_materno": "Gómez",
       "document_type_id": 1,
       "document_number": "12345678",
+      "document_type": "DNI - Documento Nacional de Identidad",
       "email": "juan@email.com",
       "phone": "987654321",
       "date_of_birth": "1990-01-01",
@@ -1656,6 +1765,7 @@ GET /api/huespedes/buscar-por-documento?country_id=1&q=pérez
       "apellido_materno": "Gómez",
       "document_type_id": 1,
       "document_number": "12345678",
+      "document_type": "DNI - Documento Nacional de Identidad",
       "email": "juan@email.com",
       "phone": "987654321",
       "country_id": 1,
@@ -1707,6 +1817,7 @@ GET /api/huespedes/buscar-por-documento?country_id=1&q=pérez
     "apellido_materno": "Gómez",
     "document_type_id": 1,
     "document_number": "12345678",
+    "document_type": "DNI - Documento Nacional de Identidad",
     "email": "juan@email.com",
     "phone": "987654321",
     "date_of_birth": "1990-01-01",
@@ -1754,6 +1865,7 @@ GET /api/huespedes/buscar-por-documento?country_id=1&q=pérez
     "apellido_materno": "Gómez",
     "document_type_id": 1,
     "document_number": "12345678",
+    "document_type": "DNI - Documento Nacional de Identidad",
     "country_id": 1
   },
   "reservas": [
@@ -2006,11 +2118,18 @@ Base URL: `/api/reservas`
 
 ### 1. Obtener Todas las Reservas
 
-**Endpoint:** `GET /api/reservas`
+**Endpoint:** `GET /api/reservas/traer-todos`
 
-**Descripción:** Obtiene lista de reservas del hotel.
+**Descripción:** Obtiene lista paginada de reservas del hotel.
 
 **Permiso Requerido:** `reservas.ver`
+
+**Parámetros Query:**
+- `page`: Número de página (default: 1)
+- `limit`: Cantidad de resultados por página (default: 10)
+- `status`: Filtrar por estado (opcional): `'pending'`, `'confirmed'`, `'checked_in'`, `'checked_out'`, `'cancelled'`, `'no_show'`
+- `start_date`: Fecha inicio para filtrar por check_in_date (formato: YYYY-MM-DD)
+- `end_date`: Fecha fin para filtrar por check_in_date (formato: YYYY-MM-DD)
 
 **Respuesta Exitosa (200):**
 ```json
@@ -2019,27 +2138,57 @@ Base URL: `/api/reservas`
   "reservas": [
     {
       "id": 1,
-      "confirmation_code": "RES-2024-001",
+      "confirmation_code": "RES202601049322",
       "guest_id": 5,
-      "room_id": 101,
-      "check_in_date": "2024-12-01",
-      "check_out_date": "2024-12-05",
+      "room_id": 30,
+      "corporate_client_id": null,
+      "check_in_date": "2026-01-04",
+      "check_out_date": "2026-01-08",
       "adults": 2,
-      "children": 0,
+      "children": 1,
       "status": "confirmed",
-      "base_price": 120.00,
+      "base_price": "200000.00",
       "total_nights": 4,
-      "subtotal": 480.00,
-      "taxes": 86.40,
-      "discount": 0,
-      "total_amount": 566.40,
-      "special_requests": null,
+      "subtotal": "800000.00",
+      "taxes": "0.00",
+      "discount": "0.00",
+      "total_amount": "800000.00",
+      "special_requests": "Cama extra",
       "notes": null,
-      "created_at": "2024-11-25T10:00:00.000Z"
+      "created_by": 1,
+      "cancelled_by": null,
+      "created_at": "2026-01-05T00:40:22.320Z",
+      "updated_at": "2026-01-10T09:33:44.088Z",
+      "guest": {
+        "id": 5,
+        "nombres": "Luis",
+        "apellido_paterno": "Hernández",
+        "apellido_materno": "Castro",
+        "document_type_id": 1,
+        "document_number": "5678901234",
+        "email": "luis.hernandez@email.com",
+        "phone": null
+      },
+      "room": {
+        "id": 30,
+        "number": "310",
+        "room_type_id": 7,
+        "floor": 3,
+        "status": "available",
+        "is_active": true
+      }
     }
-  ]
+  ],
+  "totalCount": 45,
+  "currentPage": 1,
+  "totalPages": 5
 }
 ```
+
+**Nota:**
+- La respuesta incluye objetos `guest` y `room` simplificados
+- Los campos numéricos se devuelven como strings para mantener precisión decimal
+- La paginación incluye `totalCount`, `currentPage` y `totalPages`
 
 ---
 
@@ -2059,29 +2208,149 @@ Base URL: `/api/reservas`
 {
   "ok": true,
   "reserva": {
-    "id": 1,
-    "confirmation_code": "RES-2024-001",
+    "id": 40,
+    "confirmation_code": "RES202601049322",
     "guest_id": 5,
-    "room_id": 101,
-    "check_in_date": "2024-12-01",
-    "check_out_date": "2024-12-05",
+    "room_id": 30,
+    "corporate_client_id": null,
+    "check_in_date": "2026-01-04",
+    "check_out_date": "2026-01-08",
     "adults": 2,
-    "children": 0,
-    "status": "confirmed",
-    "base_price": 120.00,
+    "children": 1,
+    "status": "checked_out",
+    "base_price": "200000.00",
     "total_nights": 4,
-    "subtotal": 480.00,
-    "taxes": 86.40,
-    "discount": 0,
-    "total_amount": 566.40,
-    "special_requests": null,
-    "notes": null,
-    "guest": { ... },
-    "room": { ... },
-    "roomType": { ... }
+    "subtotal": "800000.00",
+    "taxes": "0.00",
+    "discount": "0.00",
+    "total_amount": "800000.00",
+    "special_requests": "Cama extra",
+    "notes": "Walk-in por 3 horas\nCANCELLED: No puedo por tirar",
+    "created_by": 1,
+    "cancelled_by": null,
+    "created_at": "2026-01-05T00:40:22.320Z",
+    "updated_at": "2026-01-10T09:33:44.088Z",
+    "guest": {
+      "id": 5,
+      "nombres": "Luis",
+      "apellido_paterno": "Hernández",
+      "apellido_materno": "Castro",
+      "document_type_id": 1,
+      "document_number": "5678901234",
+      "date_of_birth": "1982-09-30",
+      "country_id": 6,
+      "email": "luis.hernandez@email.com",
+      "phone": null,
+      "address": "Carrera 7 #32-45",
+      "city": "Cartagena",
+      "preferences": {
+        "late_checkout": true,
+        "room_preference": "no_smoking",
+        "floor_preference": "high"
+      },
+      "created_at": "2025-11-10T22:25:56.993Z",
+      "updated_at": "2026-01-12T03:40:54.370Z",
+      "documentType": {
+        "id": 1,
+        "code": "DNI",
+        "name": "Documento Nacional de Identidad"
+      }
+    },
+    "room": {
+      "id": 30,
+      "number": "310",
+      "room_type_id": 7,
+      "floor": 3,
+      "status": "cleaning",
+      "notes": null,
+      "is_active": true,
+      "created_at": "2025-11-10T22:16:44.078Z",
+      "updated_at": "2026-01-10T09:33:44.088Z"
+    },
+    "checkIn": {
+      "id": 9,
+      "reservation_id": 40,
+      "room_id": 30,
+      "actual_check_in": "2026-01-03T19:00:00.000Z",
+      "expected_check_out": "2026-01-05T20:00:00.000Z",
+      "processed_by": 1,
+      "notes": "Extensión de estadía solicitada",
+      "created_at": "2026-01-05T00:40:22.332Z",
+      "checkOut": {
+        "id": 5,
+        "check_in_id": 9,
+        "actual_check_out": "2026-01-10T14:33:44.078Z",
+        "late_checkout": true,
+        "late_checkout_charge": "50000.00",
+        "room_condition": "good",
+        "minibar_charges": "0.00",
+        "damage_charges": "0.00",
+        "notes": "Check-out tardío autorizado",
+        "processed_by": 1,
+        "created_at": "2026-01-10T09:33:44.088Z"
+      }
+    },
+    "reservationGuests": [
+      {
+        "id": 1,
+        "reservation_id": 40,
+        "guest_id": 8,
+        "is_primary": false,
+        "created_at": "2026-01-05T00:40:22.332Z",
+        "guest": {
+          "id": 8,
+          "nombres": "María",
+          "apellido_paterno": "López",
+          "apellido_materno": "Sánchez",
+          "email": "maria.lopez@email.com",
+          "phone": "987654321",
+          "document_type_id": 1,
+          "document_number": "87654321",
+          "documentType": {
+            "id": 1,
+            "code": "DNI",
+            "name": "Documento Nacional de Identidad"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "reservation_id": 40,
+        "guest_id": 12,
+        "is_primary": false,
+        "created_at": "2026-01-05T00:40:22.332Z",
+        "guest": {
+          "id": 12,
+          "nombres": "Carlos",
+          "apellido_paterno": "Ramírez",
+          "apellido_materno": "Torres",
+          "email": "carlos.ramirez@email.com",
+          "phone": "912345678",
+          "document_type_id": 2,
+          "document_number": "PE123456",
+          "documentType": {
+            "id": 2,
+            "code": "CE",
+            "name": "Carné de Extranjería"
+          }
+        }
+      }
+    ]
   }
 }
 ```
+
+**Nota:** 
+- El objeto `guest` en la raíz es el huésped principal de la reserva (según `guest_id`)
+- El campo `guest.documentType` incluye información del tipo de documento del huésped principal
+- El array `reservationGuests` contiene todos los huéspedes asociados a la reserva a través de la tabla `reservation_guests`
+- Cada elemento en `reservationGuests` incluye:
+  - `is_primary`: Indica si es el huésped principal (`true`) o adicional (`false`)
+  - `guest`: Información completa del huésped incluyendo su `documentType`
+- Si no hay huéspedes adicionales, `reservationGuests` será un array vacío `[]`
+- El objeto `checkIn` se incluye si la reserva tiene un check-in registrado (puede ser `null`)
+- El objeto `checkOut` está anidado dentro de `checkIn` si existe un check-out registrado (puede ser `null`)
+- Los campos numéricos como `base_price`, `subtotal`, `taxes`, etc. se devuelven como strings para mantener precisión decimal
 
 ---
 
@@ -2124,9 +2393,53 @@ Base URL: `/api/reservas`
 ```json
 {
   "ok": true,
-  "reserva": { ... }
+  "reserva": {
+    "id": 41,
+    "confirmation_code": "RES202601051234",
+    "guest_id": 5,
+    "room_id": 30,
+    "corporate_client_id": null,
+    "check_in_date": "2026-01-10",
+    "check_out_date": "2026-01-15",
+    "adults": 2,
+    "children": 1,
+    "status": "pending",
+    "base_price": "200000.00",
+    "total_nights": 5,
+    "subtotal": "1000000.00",
+    "taxes": "0.00",
+    "discount": "0.00",
+    "total_amount": "1000000.00",
+    "special_requests": "Habitación en piso alto",
+    "notes": "Cliente VIP",
+    "created_by": 1,
+    "cancelled_by": null,
+    "created_at": "2026-01-05T10:30:00.000Z",
+    "updated_at": "2026-01-05T10:30:00.000Z",
+    "guest": {
+      "id": 5,
+      "nombres": "Luis",
+      "apellido_paterno": "Hernández",
+      "apellido_materno": "Castro",
+      "email": "luis.hernandez@email.com"
+    },
+    "room": {
+      "id": 30,
+      "number": "310",
+      "floor": 3,
+      "status": "available"
+    },
+    "checkIn": null
+  },
+  "msg": "Reserva creada correctamente"
 }
 ```
+
+**Nota:**
+- El `confirmation_code` se genera automáticamente
+- Los cálculos de `total_nights`, `subtotal` y `total_amount` se realizan automáticamente
+- El `base_price` se obtiene de la configuración de precios del tipo de habitación
+- El estado inicial es `'pending'` por defecto
 
 ---
 
@@ -2157,9 +2470,39 @@ Base URL: `/api/reservas`
 ```json
 {
   "ok": true,
-  "reserva": { ... }
+  "reserva": {
+    "id": 40,
+    "confirmation_code": "RES202601049322",
+    "guest_id": 5,
+    "room_id": 30,
+    "check_in_date": "2026-01-10",
+    "check_out_date": "2026-01-15",
+    "adults": 3,
+    "children": 1,
+    "status": "confirmed",
+    "base_price": "200000.00",
+    "total_nights": 5,
+    "subtotal": "1000000.00",
+    "taxes": "0.00",
+    "discount": "0.00",
+    "total_amount": "1000000.00",
+    "special_requests": "Cama extra",
+    "notes": null,
+    "created_by": 1,
+    "cancelled_by": null,
+    "created_at": "2026-01-05T00:40:22.320Z",
+    "updated_at": "2026-01-05T15:20:00.000Z",
+    "guest": { ... },
+    "room": { ... },
+    "checkIn": null
+  },
+  "msg": "Reserva actualizada correctamente"
 }
 ```
+
+**Nota:**
+- Si se actualizan fechas o habitación, se recalculan automáticamente `total_nights`, `subtotal` y `total_amount`
+- Se valida disponibilidad de la habitación en las nuevas fechas
 
 ---
 
@@ -2178,7 +2521,20 @@ Base URL: `/api/reservas`
 ```json
 {
   "ok": true,
-  "reserva": { ... }
+  "reserva": {
+    "id": 40,
+    "confirmation_code": "RES202601049322",
+    "status": "confirmed",
+    "guest_id": 5,
+    "room_id": 30,
+    "check_in_date": "2026-01-10",
+    "check_out_date": "2026-01-15",
+    "total_amount": "1000000.00",
+    "guest": { ... },
+    "room": { ... },
+    "checkIn": null
+  },
+  "msg": "Reserva confirmada correctamente"
 }
 ```
 
@@ -2210,17 +2566,28 @@ Base URL: `/api/reservas`
 {
   "ok": true,
   "reserva": {
-    "id": 1,
-    "confirmation_code": "RES-2024-001",
+    "id": 40,
+    "confirmation_code": "RES202601049322",
     "status": "cancelled",
-    "cancelled_by": 8,
-    "notes": "Cliente canceló por cambio de planes",
-    ...
-  }
+    "guest_id": 5,
+    "room_id": 30,
+    "check_in_date": "2026-01-10",
+    "check_out_date": "2026-01-15",
+    "total_amount": "1000000.00",
+    "notes": "CANCELLED: Cliente canceló por cambio de planes",
+    "cancelled_by": null,
+    "created_by": 1,
+    "guest": { ... },
+    "room": { ... },
+    "checkIn": null
+  },
+  "msg": "Reserva cancelada correctamente"
 }
 ```
 
-**Nota:** El campo `cancelled_by` se registra automáticamente con el ID del usuario que realiza la cancelación.
+**Nota:** 
+- El motivo de cancelación se agrega al campo `notes` con el prefijo "CANCELLED:"
+- Si ya existían notas previas, el motivo se agrega al final
 
 ---
 
@@ -2239,7 +2606,20 @@ Base URL: `/api/reservas`
 ```json
 {
   "ok": true,
-  "reserva": { ... }
+  "reserva": {
+    "id": 40,
+    "confirmation_code": "RES202601049322",
+    "status": "no_show",
+    "guest_id": 5,
+    "room_id": 30,
+    "check_in_date": "2026-01-10",
+    "check_out_date": "2026-01-15",
+    "total_amount": "1000000.00",
+    "guest": { ... },
+    "room": { ... },
+    "checkIn": null
+  },
+  "msg": "Reserva marcada como no-show"
 }
 ```
 
@@ -4804,6 +5184,13 @@ Base URL: `/api/facturas`
 
 **Autenticación:** Todas las rutas requieren token JWT
 
+**Descripción:** Este módulo gestiona las facturas del hotel. Las facturas pueden estar asociadas a reservas de habitación y/o ventas directas de productos. Cada factura puede incluir múltiples ventas (sales) con sus respectivos items.
+
+**Relación con Ventas:** A partir de la versión 3.3, las facturas tienen una relación directa con las ventas mediante el campo `invoice_id` en la tabla `sales`. Esto permite que:
+- Ventas directas (sin reserva) puedan tener factura
+- Una factura puede agrupar múltiples ventas
+- Se puede rastrear qué ventas específicas están incluidas en cada factura
+
 ### 1. Obtener Todas las Facturas
 
 **Endpoint:** `GET /api/facturas/traer-todos`
@@ -4860,7 +5247,21 @@ GET /api/facturas/traer-todos?page=1&limit=10&status=pending&from_date=2024-12-0
         "apellido_materno": "García",
         "email": "juan.perez@email.com"
       },
-      "corporateClient": null
+      "corporateClient": null,
+      "sales": [
+        {
+          "id": 15,
+          "sale_number": "SALE-2024-015",
+          "total_amount": "53.10",
+          "payment_status": "paid"
+        },
+        {
+          "id": 18,
+          "sale_number": "SALE-2024-018",
+          "total_amount": "27.50",
+          "payment_status": "paid"
+        }
+      ]
     }
   ],
   "totalCount": 50,
@@ -4923,7 +5324,63 @@ GET /api/facturas/traer-todos?page=1&limit=10&status=pending&from_date=2024-12-0
       "apellido_paterno": "Usuario",
       "apellido_materno": "Sistema",
       "email": "admin@hotel.com"
-    }
+    },
+    "sales": [
+      {
+        "id": 15,
+        "sale_number": "SALE-2024-015",
+        "total_amount": "53.10",
+        "payment_status": "paid",
+        "created_at": "2024-12-12T14:30:00.000Z",
+        "items": [
+          {
+            "id": 25,
+            "product_id": 8,
+            "quantity": 2,
+            "unit_price": "15.00",
+            "total_price": "30.00",
+            "product": {
+              "id": 8,
+              "name": "Coca Cola 500ml",
+              "sku": "BEB-001"
+            }
+          },
+          {
+            "id": 26,
+            "product_id": 12,
+            "quantity": 1,
+            "unit_price": "20.00",
+            "total_price": "20.00",
+            "product": {
+              "id": 12,
+              "name": "Papas Fritas",
+              "sku": "SNK-005"
+            }
+          }
+        ]
+      },
+      {
+        "id": 18,
+        "sale_number": "SALE-2024-018",
+        "total_amount": "27.50",
+        "payment_status": "paid",
+        "created_at": "2024-12-13T18:15:00.000Z",
+        "items": [
+          {
+            "id": 32,
+            "product_id": 15,
+            "quantity": 1,
+            "unit_price": "25.00",
+            "total_price": "25.00",
+            "product": {
+              "id": 15,
+              "name": "Cerveza Corona",
+              "sku": "BEB-010"
+            }
+          }
+        ]
+      }
+    ]
   }
 }
 ```
@@ -5732,13 +6189,13 @@ Cuando `requires_reference` es `true`, el sistema puede validar que se proporcio
 
 ## Categorías de Producto
 
-Base URL: `/api/categorias-producto`
+Base URL: `/api/categorias-productos`
 
 **Autenticación:** Todas las rutas requieren token JWT
 
 ### 1. Obtener Todas las Categorías de Producto
 
-**Endpoint:** `GET /api/categorias-producto/traer-todos`
+**Endpoint:** `GET /api/categorias-productos/traer-todos`
 
 **Descripción:** Obtiene lista de categorías de producto con paginación y filtros.
 
@@ -5751,7 +6208,7 @@ Base URL: `/api/categorias-producto`
 
 **Ejemplo de Request:**
 ```
-GET /api/categorias-producto/traer-todos?page=1&limit=10&is_active=true
+GET /api/categorias-productos/traer-todos?page=1&limit=10&is_active=true
 ```
 
 **Respuesta Exitosa (200):**
@@ -5791,7 +6248,7 @@ GET /api/categorias-producto/traer-todos?page=1&limit=10&is_active=true
 
 ### 2. Obtener Categoría de Producto por ID
 
-**Endpoint:** `GET /api/categorias-producto/traer-por-id/:id`
+**Endpoint:** `GET /api/categorias-productos/traer-por-id/:id`
 
 **Descripción:** Obtiene una categoría de producto específica por su ID.
 
@@ -5818,7 +6275,7 @@ GET /api/categorias-producto/traer-todos?page=1&limit=10&is_active=true
 
 ### 3. Crear Categoría de Producto
 
-**Endpoint:** `POST /api/categorias-producto/crear`
+**Endpoint:** `POST /api/categorias-productos/crear`
 
 **Descripción:** Crea una nueva categoría de producto.
 
@@ -5857,7 +6314,7 @@ GET /api/categorias-producto/traer-todos?page=1&limit=10&is_active=true
 
 ### 4. Actualizar Categoría de Producto
 
-**Endpoint:** `PUT /api/categorias-producto/actualizar/:id`
+**Endpoint:** `PUT /api/categorias-productos/actualizar/:id`
 
 **Descripción:** Actualiza una categoría de producto existente.
 
@@ -5899,7 +6356,7 @@ GET /api/categorias-producto/traer-todos?page=1&limit=10&is_active=true
 
 ### 5. Cambiar Estado de Categoría de Producto
 
-**Endpoint:** `PATCH /api/categorias-producto/cambiar-estado/:id`
+**Endpoint:** `PATCH /api/categorias-productos/cambiar-estado/:id`
 
 **Descripción:** Activa o desactiva una categoría de producto.
 
@@ -5936,7 +6393,7 @@ GET /api/categorias-producto/traer-todos?page=1&limit=10&is_active=true
 
 ### 6. Eliminar Categoría de Producto
 
-**Endpoint:** `DELETE /api/categorias-producto/eliminar/:id`
+**Endpoint:** `DELETE /api/categorias-productos/eliminar/:id`
 
 **Descripción:** Elimina una categoría de producto del sistema.
 
@@ -6037,12 +6494,18 @@ GET /api/reservas-huespedes/traer-todos?reservation_id=10&page=1&limit=10
       },
       "guest": {
         "id": 5,
-        "first_name": "Juan",
-        "last_name": "Pérez",
+        "nombres": "Juan",
+        "apellido_paterno": "Pérez",
+        "apellido_materno": "García",
         "email": "juan.perez@email.com",
-        "phone": "+51987654321",
-        "document_type": "DNI",
-        "document_number": "12345678"
+        "phone": "987654321",
+        "document_type_id": 1,
+        "document_number": "12345678",
+        "documentType": {
+          "id": 1,
+          "code": "DNI",
+          "name": "Documento Nacional de Identidad"
+        }
       }
     },
     {
@@ -6060,12 +6523,18 @@ GET /api/reservas-huespedes/traer-todos?reservation_id=10&page=1&limit=10
       },
       "guest": {
         "id": 8,
-        "first_name": "María",
-        "last_name": "García",
+        "nombres": "María",
+        "apellido_paterno": "García",
+        "apellido_materno": "López",
         "email": "maria.garcia@email.com",
-        "phone": "+51987654322",
-        "document_type": "DNI",
-        "document_number": "87654321"
+        "phone": "987654322",
+        "document_type_id": 1,
+        "document_number": "87654321",
+        "documentType": {
+          "id": 1,
+          "code": "DNI",
+          "name": "Documento Nacional de Identidad"
+        }
       }
     }
   ],
@@ -6144,12 +6613,18 @@ GET /api/reservas-huespedes/traer-todos?reservation_id=10&page=1&limit=10
       "created_at": "2024-12-15T10:00:00.000Z",
       "guest": {
         "id": 5,
-        "first_name": "Juan",
-        "last_name": "Pérez",
+        "nombres": "Juan",
+        "apellido_paterno": "Pérez",
+        "apellido_materno": "García",
         "email": "juan.perez@email.com",
-        "phone": "+51987654321",
-        "document_type": "DNI",
-        "document_number": "12345678"
+        "phone": "987654321",
+        "document_type_id": 1,
+        "document_number": "12345678",
+        "documentType": {
+          "id": 1,
+          "code": "DNI",
+          "name": "Documento Nacional de Identidad"
+        }
       }
     },
     {
@@ -6160,12 +6635,18 @@ GET /api/reservas-huespedes/traer-todos?reservation_id=10&page=1&limit=10
       "created_at": "2024-12-15T10:05:00.000Z",
       "guest": {
         "id": 8,
-        "first_name": "María",
-        "last_name": "García",
+        "nombres": "María",
+        "apellido_paterno": "García",
+        "apellido_materno": "López",
         "email": "maria.garcia@email.com",
-        "phone": "+51987654322",
-        "document_type": "DNI",
-        "document_number": "87654321"
+        "phone": "987654322",
+        "document_type_id": 1,
+        "document_number": "87654321",
+        "documentType": {
+          "id": 1,
+          "code": "DNI",
+          "name": "Documento Nacional de Identidad"
+        }
       }
     }
   ]
@@ -6262,37 +6743,7 @@ GET /api/reservas-huespedes/traer-todos?reservation_id=10&page=1&limit=10
 
 ---
 
-### 6. Establecer Huésped Principal
-
-**Endpoint:** `PATCH /api/reservas-huespedes/establecer-principal/:id`
-
-**Descripción:** Establece un huésped como principal en su reserva.
-
-**Permiso Requerido:** `reservas.reserva.actualizar`
-
-**Parámetros URL:**
-- `id`: ID de la relación (integer)
-
-**Respuesta Exitosa (200):**
-```json
-{
-  "ok": true,
-  "reservationGuest": {
-    "id": 2,
-    "reservation_id": 10,
-    "guest_id": 8,
-    "is_primary": true,
-    ...
-  },
-  "msg": "Huésped establecido como principal correctamente"
-}
-```
-
-**Nota:** Este endpoint automáticamente remueve `is_primary` de todos los demás huéspedes de la misma reserva.
-
----
-
-### 7. Remover Huésped de una Reserva
+### 6. Remover Huésped de una Reserva
 
 **Endpoint:** `DELETE /api/reservas-huespedes/eliminar/:id`
 
@@ -6453,6 +6904,13 @@ GET /api/ventas/traer-todos?page=1&limit=10&payment_status=paid&location_id=5
         "id": 1,
         "name": "Admin Usuario",
         "email": "admin@hotel.com"
+      },
+      "invoice": {
+        "id": 25,
+        "invoice_number": "INV-2024-025",
+        "issue_date": "2024-12-15",
+        "total_amount": "350.00",
+        "status": "paid"
       }
     }
   ],
@@ -6537,6 +6995,7 @@ GET /api/ventas/traer-todos?page=1&limit=10&payment_status=paid&location_id=5
   "location_id": 2,
   "reservation_id": 1,
   "guest_id": 1,
+  "invoice_id": 25,
   "subtotal": 45.00,
   "tax_amount": 8.10,
   "discount_amount": 5.00,
@@ -6567,6 +7026,7 @@ GET /api/ventas/traer-todos?page=1&limit=10&payment_status=paid&location_id=5
 - `location_id`: Opcional, integer, debe existir en `inventory_locations`
 - `reservation_id`: Opcional, integer, debe existir en `reservations`
 - `guest_id`: Opcional, integer, debe existir en `guests`
+- `invoice_id`: Opcional, integer, debe existir en `invoices` (permite asociar la venta a una factura)
 - `subtotal`: Requerido, decimal >= 0
 - `tax_amount`: Requerido, decimal >= 0
 - `discount_amount`: Opcional, decimal >= 0 (default: 0)
@@ -7232,11 +7692,13 @@ Al crear items de venta:
 
 ---
 
-## Reservas de Servicios (Service Reservations)
+## Reservas de Servicios
 
 Base URL: `/api/servicios-reserva`
 
 **Autenticación:** Todas las rutas requieren token JWT
+
+**Permiso Requerido:** `servicios.servicio.leer`, `servicios.servicio.crear`, `servicios.servicio.actualizar`, `servicios.servicio.eliminar`
 
 **Descripción:** Este módulo gestiona las reservas de servicios adicionales del hotel (spa, tours, transporte, etc.). Permite programar servicios para huéspedes, ya sea asociados a una reserva de habitación o de forma independiente.
 
@@ -9946,5 +10408,21 @@ Headers: { "Authorization": "Bearer <token>" }
 
 ---
 
-**Versión del Manual:** 2.8  
-**Última Actualización:** Enero 2025
+**Versión del Manual:** 3.3  
+**Última Actualización:** Febrero 2026
+
+**Cambios en v3.3:**
+- Agregada relación directa entre Ventas (Sales) y Facturas (Invoices)
+- Nuevo campo `invoice_id` en Ventas para asociar ventas a facturas
+- Campo `invoice` en respuestas de Ventas con datos de la factura asociada
+- Campo `sales` en respuestas de Facturas con todas las ventas incluidas y sus items
+- Permite que ventas directas (sin reserva) tengan factura
+
+**Cambios en v3.2:**
+- Agregado campo `document_type` en todas las respuestas de Huéspedes
+- Agregado campo `type` en todas las respuestas de Habitaciones
+- Agregado campo `activeReservation` con `guestName` en respuestas de Habitaciones
+
+---
+
+**Total de APIs documentadas:** 31 secciones completas

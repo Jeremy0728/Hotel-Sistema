@@ -1,3 +1,5 @@
+"use client";
+
 import DashboardBreadcrumb from "@/components/layout/dashboard-breadcrumb";
 import CustomSelect from "@/components/shared/custom-select";
 import SearchBox from "@/components/shared/search-box";
@@ -6,16 +8,37 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import type { Metadata } from "next";
 import Link from "next/link";
-
-const metadata: Metadata = {
-    title: "Users List & Management | WowDash Admin Dashboard",
-    description:
-        "View, manage, and organize users with the users list feature in the WowDash Admin Dashboard built with Next.js and Tailwind CSS.",
-};
+import { useUsers } from "@/hooks/useUsers";
+import { useUserOperations } from "./hooks/useUserOperations";
 
 const UsersList = () => {
+    // Obtener datos desde hooks individuales
+    const { users: apiUsers, isLoading: usersLoading } = useUsers({ limit: 100 });
+
+    // Hook de operaciones de usuarios
+    const {
+        search,
+        setSearch,
+        statusFilter,
+        setStatusFilter,
+        pageSize,
+        setPageSize,
+        paginatedUsers,
+    } = useUserOperations({
+        users: apiUsers,
+    });
+
+    if (usersLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center space-y-3">
+                    <div className="h-8 w-8 animate-spin mx-auto border-4 border-primary border-t-transparent rounded-full" />
+                    <p className="text-sm text-neutral-500">Cargando usuarios...</p>
+                </div>
+            </div>
+        );
+    }
     return (
         <>
             <DashboardBreadcrumb title="Users List" text="Users List" />
@@ -25,13 +48,15 @@ const UsersList = () => {
                     <div className="flex items-center flex-wrap gap-3">
                         <span className="text-base font-medium text-neutral-500 dark:text-neutral-300 mb-0">Show</span>
                         <CustomSelect
-                            placeholder="1"
-                            options={["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]}
+                            placeholder={String(pageSize)}
+                            options={["5", "10", "20", "50", "100"]}
+                            onChange={(value) => setPageSize(Number(value))}
                         />
-                        <SearchBox />
+                        <SearchBox value={search} onChange={setSearch} />
                         <CustomSelect
                             placeholder="Status"
-                            options={["Status", "Active", "Inactive"]}
+                            options={["all", "active", "inactive"]}
+                            onChange={(value) => setStatusFilter(value as any)}
                         />
                     </div>
                     <Button className={cn(`w-auto h-11`)} asChild>
@@ -43,7 +68,7 @@ const UsersList = () => {
                 </CardHeader>
 
                 <CardContent className="card-body p-6">
-                    <UsersListTable />
+                    <UsersListTable users={paginatedUsers} />
                 </CardContent>
             </Card>
 

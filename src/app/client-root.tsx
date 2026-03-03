@@ -7,10 +7,9 @@ import MobileBottomNav from "@/components/layout/mobile-bottom-nav";
 import ThemeCustomizer from "@/components/theme-customizer/theme-customizer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { HotelDataProvider } from "@/contexts/HotelDataContext";
+import { HotelDataProvider, useHotelData } from "@/contexts/HotelDataContext";
 import { ReactNode } from "react";
 import { Toaster } from "react-hot-toast";
-import { useHotelData } from "@/contexts/HotelDataContext";
 
 export function ClientRoot({
   defaultOpen,

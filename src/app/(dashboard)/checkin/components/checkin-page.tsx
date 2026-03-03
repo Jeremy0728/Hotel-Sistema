@@ -1,168 +1,99 @@
 ﻿"use client";
 
-import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import EmptyState from "@/components/hotel/empty-state";
-import StatusBadge from "@/components/hotel/status-badge";
-import { useHotelData } from "@/contexts/HotelDataContext";
+import { useReservations } from "@/hooks/useReservations";
+import { useRooms } from "@/hooks/useRooms";
+import { useGuests } from "@/hooks/useGuests";
+import { useCheckInOperations } from "../hooks/useCheckInOperations";
+import CheckInFiltersCard from "./checkin-filters-card";
+import CheckInTableRow from "./checkin-table-row";
+import CheckInDetailsCard from "./checkin-details-card";
 import type { ReservationStatus } from "@/types/hotel";
 
-const statusOptions: { value: ReservationStatus | "all"; label: string }[] = [
-  { value: "all", label: "Todas" },
-  { value: "confirmed", label: "Confirmadas" },
-  { value: "pending", label: "Pendientes" },
-];
-
-const paymentOptions = ["Efectivo", "Tarjeta", "Transferencia", "Mixto"] as const;
-const documentOptions = ["DNI", "Pasaporte", "Carnet Ext."] as const;
-
 export default function CheckInPage() {
-  const { reservations, guests, rooms, completeCheckIn, updateReservation } = useHotelData();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ReservationStatus | "all">("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [processing, setProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
+  // Obtener datos desde hooks individuales
+  const { reservations: apiReservations, isLoading: reservationsLoading, mutate: refreshReservations } = useReservations({ limit: 100 });
+  const { rooms: apiRooms } = useRooms({ limit: 100 });
+  const { guests: apiGuests } = useGuests({ limit: 100 });
 
-  const [form, setForm] = useState({
-    date: todayStr,
-    time: "15:00",
-    documentType: "DNI",
-    documentNumber: "",
-    paymentMethod: "Tarjeta",
-    deposit: 0,
-    notes: "",
-  });
-
-  const eligibleStatuses: ReservationStatus[] = ["confirmed", "pending"];
-
-  const filtered = reservations.filter((reservation) => {
-    if (!eligibleStatuses.includes(reservation.status)) return false;
-    const query = search.toLowerCase();
-    const matchesSearch =
-      reservation.code.toLowerCase().includes(query) ||
-      reservation.guestName.toLowerCase().includes(query) ||
-      reservation.roomNumber.toLowerCase().includes(query);
-    const matchesStatus = statusFilter === "all" ? true : reservation.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const selectedReservation = useMemo(
-    () => reservations.find((reservation) => reservation.id === selectedId) ?? null,
-    [reservations, selectedId]
+  // Transformar reservaciones de API a formato local
+  const transformedReservations = useMemo(
+    () =>
+      apiReservations.map((res) => ({
+        id: String(res.id),
+        code: res.confirmation_code,
+        guestId: String(res.guest_id),
+        guestName: res.guest
+          ? `${res.guest.nombres} ${res.guest.apellido_paterno} ${res.guest.apellido_materno || ""}`
+          : "Huésped",
+        roomId: String(res.room_id),
+        roomNumber: res.room?.number || String(res.room_id),
+        status: (res.status === "checked_in" ? "checkin" :
+                 res.status === "checked_out" ? "checkout" :
+                 res.status) as ReservationStatus,
+        checkIn: res.check_in_date,
+        checkOut: res.check_out_date,
+        nights: Math.ceil(
+          (new Date(res.check_out_date).getTime() - new Date(res.check_in_date).getTime()) /
+            (1000 * 60 * 60 * 24)
+        ),
+      })),
+    [apiReservations]
   );
 
-  const selectedGuest = selectedReservation
-    ? guests.find((guest) => guest.id === selectedReservation.guestId)
-    : undefined;
-  const selectedRoom = selectedReservation
-    ? rooms.find((room) => room.id === selectedReservation.roomId)
-    : undefined;
-  const canComplete =
-    selectedReservation && eligibleStatuses.includes(selectedReservation.status);
+  // Hook de operaciones de check-in
+  const {
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    selectedId,
+    form,
+    setForm,
+    processing,
+    error,
+    success,
+    todayStr,
+    filteredReservations,
+    selectedReservation,
+    selectedGuest,
+    selectedRoom,
+    canComplete,
+    handleSelect,
+    handleComplete,
+    handleCancel,
+  } = useCheckInOperations({
+    reservations: transformedReservations,
+    guests: apiGuests,
+    rooms: apiRooms,
+    onSuccess: refreshReservations,
+  });
 
-  const handleSelect = (id: string) => {
-    const reservation = reservations.find((item) => item.id === id);
-    const guest = reservation
-      ? guests.find((item) => item.id === reservation.guestId)
-      : undefined;
-    setSelectedId(id);
-    setForm({
-      date: reservation?.checkIn || todayStr,
-      time: "15:00",
-      documentType: guest?.documentType ?? "DNI",
-      documentNumber: guest?.documentNumber ?? "",
-      paymentMethod: "Tarjeta",
-      deposit: 0,
-      notes: "",
-    });
-    setError(null);
-    setSuccess(null);
-  };
-
-  const handleComplete = () => {
-    if (!selectedReservation) {
-      setError("Selecciona una reserva para completar el check-in.");
-      return;
-    }
-    if (!eligibleStatuses.includes(selectedReservation.status)) {
-      setError("La reserva ya fue procesada.");
-      return;
-    }
-    if (!form.documentNumber) {
-      setError("Completa el documento del huesped.");
-      return;
-    }
-
-    setProcessing(true);
-    completeCheckIn(selectedReservation.id);
-
-    const notesParts: string[] = [];
-    if (selectedReservation.notes) notesParts.push(selectedReservation.notes);
-    if (form.notes) notesParts.push(form.notes);
-    if (form.deposit > 0) {
-      notesParts.push(`Deposito: S/ ${form.deposit} (${form.paymentMethod})`);
-    }
-
-    updateReservation(selectedReservation.id, {
-      actualCheckIn: form.date,
-      notes: notesParts.length ? notesParts.join(" | ") : selectedReservation.notes,
-    });
-
-    setProcessing(false);
-    setSuccess("Check-in completado. Habitacion marcada como ocupada.");
-  };
+  if (reservationsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3">
+          <div className="h-8 w-8 animate-spin mx-auto border-4 border-primary border-t-transparent rounded-full" />
+          <p className="text-sm text-neutral-500">Cargando reservas...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <Card className="p-4 flex flex-col gap-4">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3 justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">Check-in</h2>
-            <p className="text-sm text-neutral-500 dark:text-neutral-300">
-              Gestiona la llegada de huespedes y asigna la habitacion
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <Input
-            placeholder="Buscar por codigo, huesped o habitacion"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-          <Select
-            value={statusFilter}
-            onValueChange={(value) => setStatusFilter(value as ReservationStatus | "all")}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Input type="date" value={todayStr} readOnly />
-        </div>
-      </Card>
+      <CheckInFiltersCard
+        search={search}
+        setSearch={setSearch}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        todayStr={todayStr}
+      />
 
-      {filtered.length === 0 ? (
+      {filteredReservations.length === 0 ? (
         <EmptyState
           title="Sin reservas para check-in"
           description="No hay reservas confirmadas o pendientes para procesar."
@@ -182,145 +113,31 @@ export default function CheckInPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((reservation) => (
-                  <TableRow key={reservation.id}>
-                    <TableCell className="font-medium">{reservation.code}</TableCell>
-                    <TableCell>{reservation.guestName}</TableCell>
-                    <TableCell>#{reservation.roomNumber}</TableCell>
-                    <TableCell>{reservation.checkIn}</TableCell>
-                    <TableCell>
-                      <StatusBadge type="reservation" status={reservation.status} />
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        variant={reservation.id === selectedId ? "default" : "ghost"}
-                        onClick={() => handleSelect(reservation.id)}
-                      >
-                        {reservation.id === selectedId ? "Seleccionada" : "Seleccionar"}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                {filteredReservations.map((reservation) => (
+                  <CheckInTableRow
+                    key={reservation.id}
+                    reservation={reservation}
+                    isSelected={reservation.id === selectedId}
+                    onSelect={handleSelect}
+                  />
                 ))}
               </TableBody>
             </Table>
           </Card>
 
-          <Card className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Detalle de check-in</h3>
-              {selectedReservation ? (
-                <StatusBadge type="reservation" status={selectedReservation.status} />
-              ) : null}
-            </div>
-
-            {selectedReservation ? (
-              <>
-                <div className="space-y-1 text-sm text-neutral-600 dark:text-neutral-300">
-                  <div>Reserva: {selectedReservation.code}</div>
-                  <div>Huesped: {selectedReservation.guestName}</div>
-                  <div>Habitacion: #{selectedReservation.roomNumber}</div>
-                  <div>Noches: {selectedReservation.nights}</div>
-                </div>
-
-                <Card className="p-3 bg-neutral-50 dark:bg-slate-800">
-                  <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                    Contacto
-                  </div>
-                  <div className="text-sm">
-                    {selectedGuest?.email || "Sin email"} · {selectedGuest?.phone || "Sin telefono"}
-                  </div>
-                </Card>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <Input
-                    type="date"
-                    value={form.date}
-                    onChange={(event) => setForm({ ...form, date: event.target.value })}
-                  />
-                  <Input
-                    type="time"
-                    value={form.time}
-                    onChange={(event) => setForm({ ...form, time: event.target.value })}
-                  />
-                  <Select
-                    value={form.documentType}
-                    onValueChange={(value) => setForm({ ...form, documentType: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Documento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {documentOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    placeholder="Numero de documento"
-                    value={form.documentNumber}
-                    onChange={(event) => setForm({ ...form, documentNumber: event.target.value })}
-                  />
-                  <Select
-                    value={form.paymentMethod}
-                    onValueChange={(value) => setForm({ ...form, paymentMethod: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Metodo de pago" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {paymentOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="Deposito (S/)"
-                    value={form.deposit}
-                    onChange={(event) =>
-                      setForm({ ...form, deposit: Number(event.target.value) })
-                    }
-                  />
-                </div>
-
-                <Textarea
-                  placeholder="Notas internas"
-                  value={form.notes}
-                  onChange={(event) => setForm({ ...form, notes: event.target.value })}
-                />
-
-                <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                  Habitacion actual: {selectedRoom?.type || "N/A"} · Piso {selectedRoom?.floor ?? "-"}
-                </div>
-
-                {error ? <p className="text-sm text-red-500">{error}</p> : null}
-                {success ? <p className="text-sm text-emerald-600">{success}</p> : null}
-
-                <div className="flex items-center justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    onClick={() => setSelectedId(null)}
-                    disabled={processing}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleComplete} disabled={processing || !canComplete}>
-                    {processing ? "Procesando..." : "Completar check-in"}
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <div className="text-sm text-neutral-500 dark:text-neutral-300">
-                Selecciona una reserva para registrar la llegada.
-              </div>
-            )}
-          </Card>
+          <CheckInDetailsCard
+            selectedReservation={selectedReservation}
+            selectedGuest={selectedGuest}
+            selectedRoom={selectedRoom}
+            form={form}
+            setForm={setForm}
+            error={error}
+            success={success}
+            processing={processing}
+            canComplete={canComplete}
+            onComplete={handleComplete}
+            onCancel={handleCancel}
+          />
         </div>
       )}
     </div>
