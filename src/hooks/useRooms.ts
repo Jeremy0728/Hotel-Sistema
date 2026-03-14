@@ -2,24 +2,7 @@ import { useCallback, useMemo } from 'react';
 import useSWR from 'swr';
 import { habitacionesApi } from '@/apis/habitaciones.api';
 import { ApiError } from '@/types/api';
-
-interface Room {
-  id: number;
-  number: string;
-  room_type_id: number;
-  floor: number;
-  status: "available" | "occupied" | "maintenance" | "cleaning" | "out_of_service";
-  notes?: string;
-  is_active: boolean;
-  roomType?: {
-    id: number;
-    name: string;
-    description?: string;
-    base_price: string;
-    max_occupancy: number;
-    amenities?: Record<string, any>;
-  };
-}
+import type { Room } from '@/types/room';
 
 interface UseRoomsOptions {
   page?: number;

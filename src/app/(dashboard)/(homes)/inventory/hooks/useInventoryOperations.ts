@@ -1,52 +1,26 @@
 import { useState, useMemo } from 'react';
-
-interface Product {
-  id: number;
-  name: string;
-  description?: string;
-  category_id: number;
-  price: string;
-  cost?: string;
-  sku?: string;
-  is_active: boolean;
-}
-
-interface ProductCategory {
-  id: number;
-  name: string;
-  description?: string;
-  is_active: boolean;
-}
-
-interface InventoryLocation {
-  id: number;
-  name: string;
-  type: string;
-  room_id?: number;
-  is_active: boolean;
-}
-
-interface InventoryItem {
-  id: number;
-  product_id: number;
-  location_id: number;
-  quantity: number;
-  min_stock?: number;
-  max_stock?: number;
-}
+import { productosApi } from '@/apis/productos.api';
+import { categoriasProductosApi } from '@/apis/categorias-productos.api';
+import { ubicacionesInventarioApi } from '@/apis/ubicaciones-inventario.api';
+import { inventarioApi } from '@/apis/inventario.api';
+import toast from 'react-hot-toast';
+import type {
+  InventoryProduct,
+  ProductCategory,
+  InventoryLocation,
+  InventoryItem,
+  InventoryLocationType,
+} from '@/types/inventory';
 
 interface UseInventoryOperationsProps {
-  products: Product[];
+  products: InventoryProduct[];
   categories: ProductCategory[];
   locations: InventoryLocation[];
   inventory: InventoryItem[];
-  onAddProduct?: (product: any) => Promise<void>;
-  onUpdateProduct?: (id: number, updates: any) => Promise<void>;
-  onAddCategory?: (category: any) => Promise<void>;
-  onUpdateCategory?: (id: number, updates: any) => Promise<void>;
-  onAddLocation?: (location: any) => Promise<void>;
-  onUpdateLocation?: (id: number, updates: any) => Promise<void>;
-  onUpdateInventory?: (id: number, updates: any) => Promise<void>;
+  refreshProducts: () => void;
+  refreshCategories: () => void;
+  refreshLocations: () => void;
+  refreshInventory: () => void;
 }
 
 export function useInventoryOperations({
@@ -54,13 +28,10 @@ export function useInventoryOperations({
   categories,
   locations,
   inventory,
-  onAddProduct,
-  onUpdateProduct,
-  onAddCategory,
-  onUpdateCategory,
-  onAddLocation,
-  onUpdateLocation,
-  onUpdateInventory,
+  refreshProducts,
+  refreshCategories,
+  refreshLocations,
+  refreshInventory,
 }: UseInventoryOperationsProps) {
   const [activeTab, setActiveTab] = useState('products');
 
@@ -85,7 +56,7 @@ export function useInventoryOperations({
   const [stockDialogOpen, setStockDialogOpen] = useState(false);
 
   // Editing states
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<InventoryProduct | null>(null);
   const [editingCategory, setEditingCategory] = useState<ProductCategory | null>(null);
   const [editingLocation, setEditingLocation] = useState<InventoryLocation | null>(null);
   const [adjustingItem, setAdjustingItem] = useState<InventoryItem | null>(null);
@@ -139,7 +110,7 @@ export function useInventoryOperations({
     setProductDialogOpen(true);
   };
 
-  const handleOpenEditProduct = (product: Product) => {
+  const handleOpenEditProduct = (product: InventoryProduct) => {
     setEditingProduct(product);
     setProductDialogOpen(true);
   };
@@ -150,12 +121,39 @@ export function useInventoryOperations({
   };
 
   const handleProductSubmit = async (values: any) => {
-    if (editingProduct && onUpdateProduct) {
-      await onUpdateProduct(editingProduct.id, values);
-    } else if (onAddProduct) {
-      await onAddProduct(values);
+    try {
+      if (editingProduct) {
+        await productosApi.actualizar(editingProduct.id, {
+          name: values.name,
+          description: values.description || undefined,
+          category_id: parseInt(values.categoryId, 10),
+          price: values.price.toString(),
+          cost: values.cost ? values.cost.toString() : undefined,
+          sku: values.sku || undefined,
+          unit: 'unidad',
+          is_active: values.status === 'active',
+        });
+        toast.success('Producto actualizado exitosamente');
+      } else {
+        await productosApi.crear({
+          name: values.name,
+          description: values.description || undefined,
+          category_id: parseInt(values.categoryId, 10),
+          price: values.price.toString(),
+          cost: values.cost ? values.cost.toString() : undefined,
+          sku: values.sku || undefined,
+          unit: 'unidad',
+          is_active: values.status === 'active',
+        });
+        toast.success('Producto creado exitosamente');
+      }
+      refreshProducts();
+      handleCloseProductDialog();
+    } catch (error) {
+      console.error('Error al guardar producto:', error);
+      toast.error('Error al guardar producto');
+      throw error;
     }
-    handleCloseProductDialog();
   };
 
   // Category operations
@@ -175,12 +173,29 @@ export function useInventoryOperations({
   };
 
   const handleCategorySubmit = async (values: any) => {
-    if (editingCategory && onUpdateCategory) {
-      await onUpdateCategory(editingCategory.id, values);
-    } else if (onAddCategory) {
-      await onAddCategory(values);
+    try {
+      if (editingCategory) {
+        await categoriasProductosApi.actualizar(editingCategory.id, {
+          name: values.name,
+          description: values.description || undefined,
+          is_active: values.status === 'active',
+        });
+        toast.success('Categoría actualizada exitosamente');
+      } else {
+        await categoriasProductosApi.crear({
+          name: values.name,
+          description: values.description || undefined,
+          is_active: values.status === 'active',
+        });
+        toast.success('Categoría creada exitosamente');
+      }
+      refreshCategories();
+      handleCloseCategoryDialog();
+    } catch (error) {
+      console.error('Error al guardar categoría:', error);
+      toast.error('Error al guardar categoría');
+      throw error;
     }
-    handleCloseCategoryDialog();
   };
 
   // Location operations
@@ -200,12 +215,42 @@ export function useInventoryOperations({
   };
 
   const handleLocationSubmit = async (values: any) => {
-    if (editingLocation && onUpdateLocation) {
-      await onUpdateLocation(editingLocation.id, values);
-    } else if (onAddLocation) {
-      await onAddLocation(values);
+    try {
+      // Mapear tipos de la aplicación a tipos de la API
+      const locationTypeMap: Record<InventoryLocationType, "almacen" | "minibar" | "cocina" | "bar" | "otro"> = {
+        storage: 'almacen',
+        minibar: 'minibar',
+        restaurant: 'cocina',
+        reception: 'bar',
+        warehouse: 'otro',
+      };
+      
+      const mappedType = locationTypeMap[values.type as InventoryLocationType] || 'otro';
+      
+      if (editingLocation) {
+        await ubicacionesInventarioApi.actualizar(editingLocation.id, {
+          name: values.name,
+          location_type: mappedType,
+          is_active: values.status === 'active',
+          room_id: values.roomId ? parseInt(values.roomId) : null,
+        });
+        toast.success('Ubicación actualizada exitosamente');
+      } else {
+        await ubicacionesInventarioApi.crear({
+          name: values.name,
+          location_type: mappedType,
+          is_active: values.status === 'active',
+          room_id: values.roomId ? parseInt(values.roomId) : null,
+        });
+        toast.success('Ubicación creada exitosamente');
+      }
+      refreshLocations();
+      handleCloseLocationDialog();
+    } catch (error) {
+      console.error('Error al guardar ubicación:', error);
+      toast.error('Error al guardar ubicación');
+      throw error;
     }
-    handleCloseLocationDialog();
   };
 
   // Stock operations
@@ -220,10 +265,21 @@ export function useInventoryOperations({
   };
 
   const handleAdjustStock = async (values: any) => {
-    if (adjustingItem && onUpdateInventory) {
-      await onUpdateInventory(adjustingItem.id, values);
+    try {
+      if (adjustingItem) {
+        await inventarioApi.actualizar(adjustingItem.id, {
+          quantity: values.stock,
+          min_stock: values.minStock,
+        });
+        toast.success('Stock actualizado exitosamente');
+        refreshInventory();
+      }
+      handleCloseStockDialog();
+    } catch (error) {
+      console.error('Error al ajustar stock:', error);
+      toast.error('Error al ajustar stock');
+      throw error;
     }
-    handleCloseStockDialog();
   };
 
   return {

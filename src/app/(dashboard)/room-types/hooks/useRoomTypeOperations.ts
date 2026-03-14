@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
+import { tiposHabitacionApi } from '@/apis/tipos-habitacion.api';
+import toast from 'react-hot-toast';
 
 interface RoomType {
   id: number;
   name: string;
   description?: string;
-  base_price: string;
+  base_price?: string;
   max_occupancy: number;
   amenities?: Record<string, unknown>;
   is_active: boolean;
@@ -12,16 +14,12 @@ interface RoomType {
 
 interface UseRoomTypeOperationsProps {
   roomTypes: RoomType[];
-  onAddRoomType?: (roomType: any) => Promise<void>;
-  onUpdateRoomType?: (id: number, updates: any) => Promise<void>;
-  onRemoveRoomType?: (id: number) => Promise<void>;
+  refreshRoomTypes: () => void;
 }
 
 export function useRoomTypeOperations({
   roomTypes,
-  onAddRoomType,
-  onUpdateRoomType,
-  onRemoveRoomType,
+  refreshRoomTypes,
 }: UseRoomTypeOperationsProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -60,6 +58,54 @@ export function useRoomTypeOperations({
     setEditingType(null);
   };
 
+  const handleAddRoomType = async (roomTypeData: any) => {
+    try {
+      await tiposHabitacionApi.crear({
+        name: roomTypeData.name,
+        description: roomTypeData.description || undefined,
+        max_occupancy: roomTypeData.maxGuests,
+        amenities: roomTypeData.amenities,
+        is_active: roomTypeData.status === 'active',
+      });
+      toast.success('Tipo de habitación creado exitosamente');
+      refreshRoomTypes();
+    } catch (error) {
+      console.error('Error al crear tipo de habitación:', error);
+      toast.error('Error al crear tipo de habitación');
+      throw error;
+    }
+  };
+
+  const handleUpdateRoomType = async (id: number, roomTypeData: any) => {
+    try {
+      await tiposHabitacionApi.actualizar(id, {
+        name: roomTypeData.name,
+        description: roomTypeData.description || undefined,
+        max_occupancy: roomTypeData.maxGuests,
+        amenities: roomTypeData.amenities,
+        is_active: roomTypeData.status === 'active',
+      });
+      toast.success('Tipo de habitación actualizado exitosamente');
+      refreshRoomTypes();
+    } catch (error) {
+      console.error('Error al actualizar tipo de habitación:', error);
+      toast.error('Error al actualizar tipo de habitación');
+      throw error;
+    }
+  };
+
+  const handleRemoveRoomType = async (id: number) => {
+    try {
+      await tiposHabitacionApi.eliminar(id);
+      toast.success('Tipo de habitación eliminado exitosamente');
+      refreshRoomTypes();
+    } catch (error) {
+      console.error('Error al eliminar tipo de habitación:', error);
+      toast.error('Error al eliminar tipo de habitación');
+      throw error;
+    }
+  };
+
   const handleSubmit = async (values: any) => {
     const amenities = values.amenities
       ? values.amenities
@@ -68,10 +114,10 @@ export function useRoomTypeOperations({
           .filter(Boolean)
       : [];
 
-    if (editingType && onUpdateRoomType) {
-      await onUpdateRoomType(editingType.id, { ...values, amenities });
-    } else if (onAddRoomType) {
-      await onAddRoomType({
+    if (editingType) {
+      await handleUpdateRoomType(editingType.id, { ...values, amenities });
+    } else {
+      await handleAddRoomType({
         ...values,
         amenities,
       });
@@ -89,8 +135,8 @@ export function useRoomTypeOperations({
   };
 
   const handleConfirmDelete = async () => {
-    if (deleteTarget && onRemoveRoomType) {
-      await onRemoveRoomType(deleteTarget.id);
+    if (deleteTarget) {
+      await handleRemoveRoomType(deleteTarget.id);
     }
     handleCloseDelete();
   };

@@ -4,7 +4,7 @@ interface TipoHabitacion {
   id: number;
   name: string;
   description?: string;
-  base_price: string;
+  base_price?: string;
   max_occupancy: number;
   amenities?: Record<string, unknown>;
   is_active: boolean;
@@ -12,7 +12,7 @@ interface TipoHabitacion {
 
 interface ResponseTiposHabitacion {
   ok: boolean;
-  tipos: TipoHabitacion[];
+  roomTypes: TipoHabitacion[];
   total: number;
   page: number;
   totalPages: number;

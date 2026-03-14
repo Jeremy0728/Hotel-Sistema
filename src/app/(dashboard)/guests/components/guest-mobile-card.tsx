@@ -2,15 +2,24 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
 
+interface Country {
+  id: number;
+  code: string;
+  name: string;
+  nationality: string;
+  phone_code?: string;
+}
+
 interface Guest {
   id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  document_type: string;
-  document_number: string;
-  nationality?: string;
+  nombres: string;
+  apellido_paterno: string;
+  apellido_materno?: string;
+  email?: string;
+  phone?: string;
+  document_type?: string;
+  document_number?: string;
+  country?: Country;
 }
 
 interface GuestMobileCardProps {
@@ -24,10 +33,10 @@ export default function GuestMobileCard({ guest, onEdit }: GuestMobileCardProps)
       <div className="flex items-center justify-between">
         <div>
           <p className="font-semibold">
-            {guest.first_name} {guest.last_name}
+            {guest.nombres} {guest.apellido_paterno} {guest.apellido_materno || ''}
           </p>
           <p className="text-xs text-neutral-500 dark:text-neutral-300">
-            {guest.document_type} {guest.document_number}
+            {guest.document_type || '—'} {guest.document_number || '—'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -40,10 +49,10 @@ export default function GuestMobileCard({ guest, onEdit }: GuestMobileCardProps)
         </div>
       </div>
       <div className="text-xs text-neutral-500 dark:text-neutral-300 mt-2">
-        {guest.email || "Sin email"} · {guest.phone}
+        {guest.email || "Sin email"} · {guest.phone || '—'}
       </div>
       <div className="text-xs text-neutral-500 dark:text-neutral-300 mt-1">
-        {guest.nationality || "—"}
+        {guest.country?.nationality || "—"}
       </div>
     </Card>
   );

@@ -22,7 +22,7 @@ export function useProductCategories(options: UseProductCategoriesOptions = {}) 
     async () => {
       const response = await categoriasProductosApi.traerTodos(page, limit);
       return {
-        categories: response.categorias || [],
+        categories: response.productCategories || [],
         total: response.total,
         page: response.page,
         totalPages: response.totalPages,

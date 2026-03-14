@@ -61,6 +61,15 @@ export interface CheckIn {
   checkOut?: CheckOut;
 }
 
+export interface ReservationGuest {
+  id: number;
+  reservation_id: number;
+  guest_id: number;
+  is_primary: boolean;
+  created_at: string;
+  guest?: Guest;
+}
+
 export interface Reserva {
   id: number;
   confirmation_code: string;
@@ -87,6 +96,7 @@ export interface Reserva {
   guest?: Guest;
   room?: Room;
   checkIn?: CheckIn;
+  reservationGuests?: ReservationGuest[];
   // Campos legacy para compatibilidad
   huesped?: Guest;
   habitacion?: Room;

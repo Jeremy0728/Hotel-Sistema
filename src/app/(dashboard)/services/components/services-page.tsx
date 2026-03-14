@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,12 +14,11 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import EmptyState from "@/components/hotel/empty-state";
-import { useHotelData } from "@/contexts/HotelDataContext";
+import { useServices } from "@/hooks/useServices";
+import { useServiceOperations } from "../hooks/useServiceOperations";
 import { cn } from "@/lib/utils";
-import type { Service } from "@/types/hotel";
-import type { ServiceBookingFormValues, ServiceFormValues } from "@/lib/hotel-schemas";
+import type { ServiceFormValues } from "@/lib/hotel-schemas";
 import ServiceForm from "./service-form";
-import ServiceBookingForm from "./service-booking-form";
 import Link from "next/link";
 
 const statusOptions = [
@@ -30,71 +28,50 @@ const statusOptions = [
 ];
 
 export default function ServicesPage() {
+  // Obtener datos desde hook useServices
+  const { services: apiServices, isLoading: servicesLoading, refreshServices } = useServices({ limit: 100 });
+
+  // Hook de operaciones de servicios
   const {
-    services,
-    guests,
-    addService,
-    updateService,
-    removeService,
-    addServiceBooking,
-  } = useHotelData();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [formOpen, setFormOpen] = useState(false);
-  const [bookingOpen, setBookingOpen] = useState(false);
-  const [editingService, setEditingService] = useState<Service | null>(null);
-  const [bookingService, setBookingService] = useState<Service | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Service | null>(null);
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    formOpen,
+    editingService,
+    deleteTarget,
+    filteredServices,
+    handleOpenCreate,
+    handleOpenEdit,
+    handleCloseForm,
+    handleSubmit,
+    handleOpenDelete,
+    handleCloseDelete,
+    handleConfirmDelete,
+  } = useServiceOperations({
+    services: apiServices,
+    refreshServices,
+  });
 
-  const filtered = useMemo(() => {
-    const query = search.toLowerCase();
-    return services.filter((service) => {
-      const matchesSearch =
-        service.name.toLowerCase().includes(query) ||
-        (service.category ?? "").toLowerCase().includes(query);
-      const matchesStatus = statusFilter === "all" ? true : service.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [services, search, statusFilter]);
-
-  const handleOpenCreate = () => {
-    setEditingService(null);
-    setFormOpen(true);
-  };
-
-  const handleOpenEdit = (service: Service) => {
-    setEditingService(service);
-    setFormOpen(true);
-  };
-
-  const handleOpenBooking = (service?: Service) => {
-    setBookingService(service ?? null);
-    setBookingOpen(true);
-  };
-
-  const handleSubmit = (values: ServiceFormValues) => {
-    if (editingService) {
-      updateService(editingService.id, values);
-    } else {
-      addService({
-        id: `srv-${Date.now()}`,
-        ...values,
-      });
-    }
-    setFormOpen(false);
-    setEditingService(null);
-  };
-
-  const todayStr = new Date().toISOString().split("T")[0];
+  if (servicesLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3">
+          <div className="h-8 w-8 animate-spin mx-auto border-4 border-primary border-t-transparent rounded-full" />
+          <p className="text-sm text-neutral-500">Cargando servicios...</p>
+        </div>
+      </div>
+    );
+  }
 
   const defaultServiceValues: ServiceFormValues = editingService
     ? {
         name: editingService.name,
-        category: editingService.category ?? "",
+        category: editingService.category,
         description: editingService.description ?? "",
-        price: editingService.price,
-        durationMinutes: editingService.durationMinutes,
-        status: editingService.status,
+        price: parseFloat(editingService.price),
+        durationMinutes: editingService.duration_minutes ?? 30,
+        status: editingService.is_active ? "active" : "inactive",
       }
     : {
         name: "",
@@ -104,37 +81,6 @@ export default function ServicesPage() {
         durationMinutes: 30,
         status: "active",
       };
-
-  const defaultBookingValues: ServiceBookingFormValues = {
-    serviceId: bookingService?.id ?? services[0]?.id ?? "",
-    guestId: guests[0]?.id ?? "",
-    date: todayStr,
-    time: "10:00",
-    status: "scheduled",
-    notes: "",
-  };
-
-  const handleBookingSubmit = (values: ServiceBookingFormValues) => {
-    const service = services.find((item) => item.id === values.serviceId);
-    const guest = guests.find((item) => item.id === values.guestId);
-    if (!service || !guest) return;
-
-    addServiceBooking({
-      id: `sb-${Date.now()}`,
-      serviceId: service.id,
-      serviceName: service.name,
-      guestId: guest.id,
-      guestName: `${guest.firstName} ${guest.lastName}`,
-      date: values.date,
-      time: values.time,
-      status: values.status,
-      price: service.price,
-      notes: values.notes,
-    });
-
-    setBookingOpen(false);
-    setBookingService(null);
-  };
 
   return (
     <div className="space-y-6">
@@ -174,7 +120,7 @@ export default function ServicesPage() {
         </div>
       </Card>
 
-      {filtered.length === 0 ? (
+      {filteredServices.length === 0 ? (
         <EmptyState
           title="Sin servicios"
           description="No hay servicios registrados."
@@ -194,22 +140,22 @@ export default function ServicesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((service) => (
+              {filteredServices.map((service) => (
                 <TableRow key={service.id}>
                   <TableCell className="font-medium">{service.name}</TableCell>
                   <TableCell>{service.category || "-"}</TableCell>
                   <TableCell>S/ {service.price}</TableCell>
-                  <TableCell>{service.durationMinutes} min</TableCell>
+                  <TableCell>{service.duration_minutes ?? '-'} min</TableCell>
                   <TableCell>
                     <Badge
                       className={cn(
                         "rounded-full",
-                        service.status === "active"
+                        service.is_active
                           ? "bg-emerald-100 text-emerald-700"
                           : "bg-neutral-200 text-neutral-700"
                       )}
                     >
-                      {service.status === "active" ? "Activo" : "Inactivo"}
+                      {service.is_active ? "Activo" : "Inactivo"}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -217,10 +163,7 @@ export default function ServicesPage() {
                       <Button size="sm" variant="ghost" onClick={() => handleOpenEdit(service)}>
                         Editar
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleOpenBooking(service)}>
-                        Reservar
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(service)}>
+                      <Button size="sm" variant="ghost" onClick={() => handleOpenDelete(service)}>
                         Eliminar
                       </Button>
                     </div>
@@ -232,7 +175,7 @@ export default function ServicesPage() {
         </Card>
       )}
 
-      <Dialog open={formOpen} onOpenChange={setFormOpen}>
+      <Dialog open={formOpen} onOpenChange={handleCloseForm}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
@@ -242,29 +185,13 @@ export default function ServicesPage() {
           <ServiceForm
             defaultValues={defaultServiceValues}
             onSubmit={handleSubmit}
-            onCancel={() => setFormOpen(false)}
+            onCancel={handleCloseForm}
             submitLabel={editingService ? "Guardar cambios" : "Crear servicio"}
           />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Reservar servicio</DialogTitle>
-          </DialogHeader>
-          <ServiceBookingForm
-            services={services}
-            guests={guests}
-            defaultValues={defaultBookingValues}
-            onSubmit={handleBookingSubmit}
-            onCancel={() => setBookingOpen(false)}
-            submitLabel="Crear reserva"
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+      <Dialog open={!!deleteTarget} onOpenChange={handleCloseDelete}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Confirmar eliminacion</DialogTitle>
@@ -273,18 +200,10 @@ export default function ServicesPage() {
             Vas a eliminar el servicio "{deleteTarget?.name}".
           </p>
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
+            <Button variant="ghost" onClick={handleCloseDelete}>
               Cancelar
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (deleteTarget) {
-                  removeService(deleteTarget.id);
-                }
-                setDeleteTarget(null);
-              }}
-            >
+            <Button variant="destructive" onClick={handleConfirmDelete}>
               Eliminar
             </Button>
           </div>

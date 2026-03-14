@@ -15,18 +15,7 @@ import type { GuestFormValues } from "@/lib/hotel-schemas";
 
 export default function GuestsPage() {
   // Obtener datos desde hook useGuests
-  const { guests: apiGuests, isLoading: guestsLoading } = useGuests({ limit: 100 });
-
-  // Funciones para agregar y actualizar huéspedes (TODO: implementar con API real)
-  const handleAddGuest = async (guest: any) => {
-    // TODO: Llamar a huespedesApi.crear
-    console.log("Add guest:", guest);
-  };
-
-  const handleUpdateGuest = async (id: number, updates: any) => {
-    // TODO: Llamar a huespedesApi.actualizar
-    console.log("Update guest:", id, updates);
-  };
+  const { guests: apiGuests, isLoading: guestsLoading, refreshGuests } = useGuests({ limit: 100 });
 
   // Hook de operaciones de huéspedes
   const {
@@ -54,9 +43,9 @@ export default function GuestsPage() {
     handleNextPage,
   } = useGuestOperations({
     guests: apiGuests,
-    onAddGuest: handleAddGuest,
-    onUpdateGuest: handleUpdateGuest,
+    refreshGuests,
   });
+    console.log("🚀 ~ GuestsPage ~ paginatedGuests:", paginatedGuests)
 
   if (guestsLoading) {
     return (
@@ -71,16 +60,16 @@ export default function GuestsPage() {
 
   const defaultValues: GuestFormValues = editingGuest
     ? {
-        firstName: editingGuest.first_name,
-        lastName: editingGuest.last_name,
-        secondLastName: "",
+        firstName: editingGuest.nombres,
+        lastName: editingGuest.apellido_paterno,
+        secondLastName: editingGuest.apellido_materno ?? "",
         birthDate: editingGuest.date_of_birth ?? "",
-        documentType: editingGuest.document_type,
-        documentNumber: editingGuest.document_number,
-        email: editingGuest.email,
-        phone: editingGuest.phone,
-        nationality: editingGuest.nationality ?? "",
-        country: editingGuest.country ?? "",
+        documentType: editingGuest.document_type_id?.toString() ?? "",
+        documentNumber: editingGuest.document_number ?? "",
+        email: editingGuest.email ?? "",
+        phone: editingGuest.phone ?? "",
+        nationality: editingGuest.country_id?.toString() ?? "",
+        country: editingGuest.country?.name ?? "",
         city: editingGuest.city ?? "",
         address: editingGuest.address ?? "",
       }

@@ -9,7 +9,7 @@ interface RoomType {
   id: number;
   name: string;
   description?: string;
-  base_price: string;
+  base_price?: string;
   max_occupancy: number;
   amenities?: Record<string, unknown>;
   is_active: boolean;
@@ -39,7 +39,7 @@ export default function RoomTypeTableRow({
       </TableCell>
       <TableCell>{roomType.max_occupancy} pax</TableCell>
       <TableCell className="text-xs text-neutral-500 dark:text-neutral-300">
-        <div>Precio base: {formatRate(roomType.base_price)}</div>
+        <div>Precio base: {roomType.base_price ? formatRate(roomType.base_price) : '-'}</div>
       </TableCell>
       <TableCell>
         <div className="flex flex-wrap gap-1">

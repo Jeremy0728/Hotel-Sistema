@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { RoomStatus } from '@/types/hotel';
+import { habitacionesApi } from '@/apis/habitaciones.api';
+import toast from 'react-hot-toast';
 
 interface Room {
   id: number;
@@ -23,8 +25,7 @@ interface UseRoomConfigOperationsProps {
   roomTypes: RoomType[];
   statusParam?: string | null;
   viewParam?: string | null;
-  onAddRoom?: (room: any) => Promise<void>;
-  onUpdateRoom?: (id: number, updates: any) => Promise<void>;
+  refreshRooms: () => void;
 }
 
 const validStatuses = new Set<RoomStatus>([
@@ -40,8 +41,7 @@ export function useRoomConfigOperations({
   roomTypes,
   statusParam,
   viewParam,
-  onAddRoom,
-  onUpdateRoom,
+  refreshRooms,
 }: UseRoomConfigOperationsProps) {
   const hasParamFilter = statusParam && validStatuses.has(statusParam as RoomStatus);
 
@@ -103,11 +103,48 @@ export function useRoomConfigOperations({
     setEditingRoom(null);
   };
 
+  const handleAddRoom = async (roomData: any) => {
+    try {
+      await habitacionesApi.crear({
+        number: roomData.number,
+        room_type_id: parseInt(roomData.type, 10),
+        floor: roomData.floor,
+        status: roomData.status,
+        notes: roomData.notes || undefined,
+        is_active: true,
+      });
+      toast.success('Habitación creada exitosamente');
+      refreshRooms();
+    } catch (error) {
+      console.error('Error al crear habitación:', error);
+      toast.error('Error al crear habitación');
+      throw error;
+    }
+  };
+
+  const handleUpdateRoom = async (id: number, roomData: any) => {
+    try {
+      await habitacionesApi.actualizar(id, {
+        number: roomData.number,
+        room_type_id: parseInt(roomData.type, 10),
+        floor: roomData.floor,
+        status: roomData.status,
+        notes: roomData.notes || undefined,
+      });
+      toast.success('Habitación actualizada exitosamente');
+      refreshRooms();
+    } catch (error) {
+      console.error('Error al actualizar habitación:', error);
+      toast.error('Error al actualizar habitación');
+      throw error;
+    }
+  };
+
   const handleSubmit = async (values: any) => {
-    if (editingRoom && onUpdateRoom) {
-      await onUpdateRoom(editingRoom.id, values);
-    } else if (onAddRoom) {
-      await onAddRoom(values);
+    if (editingRoom) {
+      await handleUpdateRoom(editingRoom.id, values);
+    } else {
+      await handleAddRoom(values);
     }
     handleCloseForm();
   };

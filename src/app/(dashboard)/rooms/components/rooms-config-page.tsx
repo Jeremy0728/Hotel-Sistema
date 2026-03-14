@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import EmptyState from "@/components/hotel/empty-state";
 import { useRooms } from "@/hooks/useRooms";
+import { useRoomTypes } from "@/hooks/useRoomTypes";
 import { useRoomConfigOperations } from "../hooks/useRoomConfigOperations";
 import RoomConfigFiltersCard from "./room-config-filters-card";
 import RoomDetailDialog from "./room-detail-dialog";
@@ -17,22 +18,9 @@ export default function RoomsConfigPage() {
   const viewParam = searchParams.get("view");
   const statusParam = searchParams.get("status");
 
-  // Obtener datos desde hook useRooms
-  const { rooms: apiRooms, isLoading: roomsLoading } = useRooms({ limit: 100 });
-
-  // TODO: Obtener tipos de habitación desde API cuando esté disponible
-  const roomTypes: any[] = [];
-
-  // Funciones para agregar y actualizar habitaciones (TODO: implementar con API real)
-  const handleAddRoom = async (room: any) => {
-    // TODO: Llamar a habitacionesApi.crear
-    console.log("Add room:", room);
-  };
-
-  const handleUpdateRoom = async (id: number, updates: any) => {
-    // TODO: Llamar a habitacionesApi.actualizar
-    console.log("Update room:", id, updates);
-  };
+  // Obtener datos desde hooks
+  const { rooms: apiRooms, isLoading: roomsLoading, refreshRooms } = useRooms({ limit: 100 });
+  const { roomTypes, isLoading: roomTypesLoading } = useRoomTypes({ limit: 100 });
 
   // Hook de operaciones de configuración de habitaciones
   const {
@@ -62,16 +50,15 @@ export default function RoomsConfigPage() {
     roomTypes,
     statusParam,
     viewParam,
-    onAddRoom: handleAddRoom,
-    onUpdateRoom: handleUpdateRoom,
+    refreshRooms,
   });
 
-  if (roomsLoading) {
+  if (roomsLoading || roomTypesLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-3">
           <div className="h-8 w-8 animate-spin mx-auto border-4 border-primary border-t-transparent rounded-full" />
-          <p className="text-sm text-neutral-500">Cargando habitaciones...</p>
+          <p className="text-sm text-neutral-500">Cargando datos...</p>
         </div>
       </div>
     );
@@ -80,7 +67,7 @@ export default function RoomsConfigPage() {
   const defaultFormValues: RoomFormValues = editingRoom
     ? {
         number: editingRoom.number,
-        type: editingRoom.roomType?.name || "",
+        type: editingRoom.roomType?.id.toString() || "",
         floor: editingRoom.floor,
         status: editingRoom.status as any,
         notes: editingRoom.notes ?? "",
@@ -144,7 +131,7 @@ export default function RoomsConfigPage() {
             onSubmit={handleSubmit}
             onCancel={handleCloseForm}
             submitLabel={editingRoom ? "Guardar cambios" : "Crear habitación"}
-            typeOptions={roomTypeOptions}
+            roomTypes={roomTypes}
           />
         </DialogContent>
       </Dialog>

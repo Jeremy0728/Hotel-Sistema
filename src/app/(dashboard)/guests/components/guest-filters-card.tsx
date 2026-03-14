@@ -20,8 +20,8 @@ interface GuestFiltersCardProps {
   setDocumentFilter: (value: string) => void;
   pageSize: number;
   setPageSize: (value: number) => void;
-  nationalities: string[];
-  documentTypes: string[];
+  nationalities: (string | undefined)[];
+  documentTypes: (string | undefined)[];
   onOpenCreate: () => void;
 }
 
@@ -62,7 +62,7 @@ export default function GuestFiltersCard({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas</SelectItem>
-            {nationalities.map((item) => (
+            {nationalities.filter((item): item is string => !!item).map((item) => (
               <SelectItem key={item} value={item}>
                 {item}
               </SelectItem>
@@ -75,7 +75,7 @@ export default function GuestFiltersCard({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            {documentTypes.map((item) => (
+            {documentTypes.filter((item): item is string => !!item).map((item) => (
               <SelectItem key={item} value={item}>
                 {item}
               </SelectItem>

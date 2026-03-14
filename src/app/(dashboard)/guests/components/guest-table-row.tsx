@@ -3,15 +3,24 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+interface Country {
+  id: number;
+  code: string;
+  name: string;
+  nationality: string;
+  phone_code?: string;
+}
+
 interface Guest {
   id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  document_type: string;
-  document_number: string;
-  nationality?: string;
+  nombres: string;
+  apellido_paterno: string;
+  apellido_materno?: string;
+  email?: string;
+  phone?: string;
+  document_type?: string;
+  document_number?: string;
+  country?: Country;
 }
 
 interface GuestTableRowProps {
@@ -36,14 +45,14 @@ export default function GuestTableRow({ guest, onEdit }: GuestTableRowProps) {
       }}
     >
       <TableCell className="font-medium">
-        {guest.first_name} {guest.last_name}
+        {guest.nombres} {guest.apellido_paterno} {guest.apellido_materno || ''}
       </TableCell>
       <TableCell>
-        {guest.document_type} {guest.document_number}
+        {guest.document_type || '—'} {guest.document_number || '—'}
       </TableCell>
       <TableCell>{guest.email || "—"}</TableCell>
-      <TableCell>{guest.phone}</TableCell>
-      <TableCell>{guest.nationality || "—"}</TableCell>
+      <TableCell>{guest.phone || "—"}</TableCell>
+      <TableCell>{guest.country?.nationality || "—"}</TableCell>
       <TableCell>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="ghost" asChild>

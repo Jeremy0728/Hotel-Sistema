@@ -25,7 +25,7 @@ export function useInventory(options: UseInventoryOptions = {}) {
     async () => {
       const response = await inventarioApi.traerTodos(page, limit, filters);
       return {
-        inventory: response.inventario || [],
+        inventory: response.inventories || [],
         total: response.total,
         page: response.page,
         totalPages: response.totalPages,

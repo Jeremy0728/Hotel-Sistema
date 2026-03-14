@@ -14,8 +14,8 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import StatusBadge from "@/components/hotel/status-badge";
 import type { ReservationStatus } from "@/types/hotel";
+import { useActiveMetodosPago } from "@/hooks/useMetodosPago";
 
-const paymentOptions = ["Efectivo", "Tarjeta", "Transferencia", "Mixto"] as const;
 
 interface Reservation {
   id: string;
@@ -42,16 +42,19 @@ interface Room {
 interface CheckOutForm {
   date: string;
   time: string;
-  paymentMethod: string;
+  paymentMethod: number;
   manualCharge: number;
   discount: number;
   notes: string;
 }
 
 interface ExtraOption {
-  id: string;
-  label: string;
-  amount: number;
+  id: number;
+  name: string;
+  description?: string;
+  price: string;
+  category: string;
+  is_active: boolean;
 }
 
 interface CheckOutDetailsCardProps {
@@ -60,9 +63,10 @@ interface CheckOutDetailsCardProps {
   selectedRoom?: Room;
   form: CheckOutForm;
   setForm: (form: CheckOutForm) => void;
-  extras: string[];
-  extraOptions: readonly ExtraOption[];
-  onToggleExtra: (id: string) => void;
+  extras: { id: number; quantity: number }[];
+  extraOptions: ExtraOption[];
+  onToggleExtra: (id: number) => void;
+  onQuantityChange: (id: number, quantity: number) => void;
   baseTotal: number;
   extrasTotal: number;
   subtotal: number;
@@ -85,6 +89,7 @@ export default function CheckOutDetailsCard({
   extras,
   extraOptions,
   onToggleExtra,
+  onQuantityChange,
   baseTotal,
   extrasTotal,
   subtotal,
@@ -97,6 +102,7 @@ export default function CheckOutDetailsCard({
   onComplete,
   onCancel,
 }: CheckOutDetailsCardProps) {
+  const { paymentMethods, isLoading: loadingPaymentMethods } = useActiveMetodosPago();
   return (
     <Card className="p-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -135,21 +141,23 @@ export default function CheckOutDetailsCard({
               onChange={(e) => setForm({ ...form, time: e.target.value })}
             />
             <Select
-              value={form.paymentMethod}
-              onValueChange={(value) => setForm({ ...form, paymentMethod: value })}
+              value={form.paymentMethod.toString()}
+              onValueChange={(value) => setForm({ ...form, paymentMethod: parseInt(value, 10) })}
+              disabled={loadingPaymentMethods}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Método de pago" />
+                <SelectValue placeholder={loadingPaymentMethods ? "Cargando..." : "Método de pago"} />
               </SelectTrigger>
               <SelectContent>
-                {paymentOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
+                {paymentMethods.map((method) => (
+                  <SelectItem key={method.id} value={method.id.toString()}>
+                    {method.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Input
+              label="Cargo manual (S/)"
               type="number"
               min={0}
               placeholder="Cargo manual (S/)"
@@ -157,6 +165,7 @@ export default function CheckOutDetailsCard({
               onChange={(e) => setForm({ ...form, manualCharge: Number(e.target.value) })}
             />
             <Input
+              label="Descuento (%)"
               type="number"
               min={0}
               max={50}
@@ -168,21 +177,38 @@ export default function CheckOutDetailsCard({
 
           <div className="space-y-2">
             <p className="text-sm font-semibold">Cargos adicionales</p>
-            {extraOptions.map((extra) => (
-              <div key={extra.id} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id={`extra-${extra.id}`}
-                    checked={extras.includes(extra.id)}
-                    onCheckedChange={() => onToggleExtra(extra.id)}
-                  />
-                  <Label htmlFor={`extra-${extra.id}`}>{extra.label}</Label>
+            {extraOptions.map((extra) => {
+              const selectedExtra = extras.find((e) => e.id === extra.id);
+              const isChecked = !!selectedExtra;
+              const quantity = selectedExtra?.quantity || 1;
+              
+              return (
+                <div key={extra.id} className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={`extra-${extra.id}`}
+                      checked={isChecked}
+                      onCheckedChange={() => onToggleExtra(extra.id)}
+                    />
+                    <Label htmlFor={`extra-${extra.id}`}>{extra.name}</Label>
+                  </div>
+                  
+                  {isChecked && (
+                    <Input
+                      type="number"
+                      min={1}
+                      className="w-20"
+                      value={quantity}
+                      onChange={(e) => onQuantityChange(extra.id, parseInt(e.target.value, 10) || 1)}
+                    />
+                  )}
+                  
+                  <span className="text-sm text-neutral-500 dark:text-neutral-300 ml-auto">
+                    S/ {parseFloat(extra.price).toFixed(2)}
+                  </span>
                 </div>
-                <span className="text-sm text-neutral-500 dark:text-neutral-300">
-                  S/ {extra.amount}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <Card className="p-3 bg-neutral-50 dark:bg-slate-800">

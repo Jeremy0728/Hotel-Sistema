@@ -58,7 +58,7 @@ export type GuestFormValues = z.infer<typeof guestSchema>;
 export const productSchema = z.object({
   name: z.string().min(1, "Nombre requerido"),
   sku: z.string().min(1, "SKU requerido"),
-  categoryId: z.string().min(1, "Categoria requerida"),
+  categoryId: z.number().int().min(1, "Categoria requerida"),
   price: z.coerce.number().min(0, "Precio debe ser mayor o igual a 0"),
   cost: z.coerce.number().min(0, "Costo debe ser mayor o igual a 0"),
   status: z.enum(["active", "inactive"]),
@@ -78,8 +78,8 @@ export type CategoryFormValues = z.infer<typeof categorySchema>;
 
 export const locationSchema = z.object({
   name: z.string().min(1, "Nombre requerido"),
-  type: z.enum(["reception", "minibar", "storage", "restaurant"]),
-  roomId: z.string().optional(),
+  type: z.enum(["reception", "minibar", "storage", "restaurant", "warehouse"]),
+  roomId: z.number().optional(),
   status: z.enum(["active", "inactive"]),
 });
 

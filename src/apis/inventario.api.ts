@@ -12,7 +12,7 @@ interface Inventario {
 
 interface ResponseInventario {
   ok: boolean;
-  inventario: Inventario[];
+  inventories: Inventario[];
   total: number;
   page: number;
   totalPages: number;

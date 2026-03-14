@@ -20,7 +20,7 @@ import {
 import { locationSchema, type LocationFormValues } from "@/lib/hotel-schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import type { Room } from "@/types/hotel";
+import type { Room } from "@/types/room";
 
 interface LocationFormProps {
   defaultValues: LocationFormValues;
@@ -110,7 +110,10 @@ export default function InventoryLocationForm({
             name="roomId"
             render={({ field }) => (
               <FormItem>
-                <Select value={field.value || ""} onValueChange={field.onChange}>
+                <Select 
+                  value={field.value?.toString() || ""} 
+                  onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : undefined)}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Habitacion" />
@@ -118,7 +121,7 @@ export default function InventoryLocationForm({
                   </FormControl>
                   <SelectContent>
                     {rooms.map((room) => (
-                      <SelectItem key={room.id} value={room.id}>
+                      <SelectItem key={room.id} value={room.id.toString()}>
                         Habitacion #{room.number}
                       </SelectItem>
                     ))}

@@ -14,23 +14,7 @@ import type { RoomTypeFormValues } from "@/lib/hotel-schemas";
 
 export default function RoomTypesPage() {
   // Obtener datos desde hook useRoomTypes
-  const { roomTypes: apiRoomTypes, isLoading: roomTypesLoading } = useRoomTypes({ limit: 100 });
-
-  // Funciones para agregar, actualizar y eliminar tipos de habitación (TODO: implementar con API real)
-  const handleAddRoomType = async (roomType: any) => {
-    // TODO: Llamar a tiposHabitacionApi.crear
-    console.log("Add room type:", roomType);
-  };
-
-  const handleUpdateRoomType = async (id: number, updates: any) => {
-    // TODO: Llamar a tiposHabitacionApi.actualizar
-    console.log("Update room type:", id, updates);
-  };
-
-  const handleRemoveRoomType = async (id: number) => {
-    // TODO: Llamar a tiposHabitacionApi.eliminar
-    console.log("Remove room type:", id);
-  };
+  const { roomTypes: apiRoomTypes, isLoading: roomTypesLoading, refreshRoomTypes } = useRoomTypes({ limit: 100 });
 
   // Hook de operaciones de tipos de habitación
   const {
@@ -51,9 +35,7 @@ export default function RoomTypesPage() {
     handleConfirmDelete,
   } = useRoomTypeOperations({
     roomTypes: apiRoomTypes,
-    onAddRoomType: handleAddRoomType,
-    onUpdateRoomType: handleUpdateRoomType,
-    onRemoveRoomType: handleRemoveRoomType,
+    refreshRoomTypes,
   });
 
   if (roomTypesLoading) {
@@ -73,7 +55,7 @@ export default function RoomTypesPage() {
         description: editingType.description ?? "",
         maxGuests: editingType.max_occupancy,
         rateHour: 0,
-        rateDay: parseFloat(editingType.base_price),
+        rateDay: editingType.base_price ? parseFloat(editingType.base_price) : 0,
         rateWeek: 0,
         rateMonth: 0,
         amenities: editingType.amenities ? Object.values(editingType.amenities).join(", ") : "",

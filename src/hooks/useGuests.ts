@@ -1,20 +1,39 @@
 import useSWR from 'swr';
 import { huespedesApi } from '@/apis/huespedes.api';
 
+interface DocumentType {
+  id: number;
+  code: string;
+  name: string;
+  description?: string;
+}
+
+interface Country {
+  id: number;
+  code: string;
+  name: string;
+  nationality: string;
+  phone_code?: string;
+}
+
 export interface Guest {
   id: number;
   nombres: string;
   apellido_paterno: string;
-  apellido_materno: string;
-  tipo_documento: string;
-  numero_documento: string;
-  email: string;
-  telefono: string;
-  direccion: string;
-  ciudad: string;
-  pais: string;
-  fecha_nacimiento: string;
-  nacionalidad: string;
+  apellido_materno?: string;
+  document_type_id?: number;
+  document_number?: string;
+  document_type?: string;
+  email?: string;
+  phone?: string;
+  date_of_birth?: string;
+  address?: string;
+  city?: string;
+  country_id?: number;
+  preferences?: Record<string, unknown>;
+  created_at?: string;
+  documentType?: DocumentType;
+  country?: Country;
 }
 
 interface UseGuestsOptions {

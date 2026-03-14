@@ -2,13 +2,24 @@ import { apiGet, apiPost, apiPut } from "@/lib/api/apiWrapper";
 
 interface CheckOut {
   id: number;
-  reservation_id: number;
-  check_out_date: string;
-  check_out_time: string;
-  additional_charges?: string;
-  damages?: string;
+  check_in_id: number;
+  actual_check_out?: string;
+  final_amount: number;
+  payment_status?: 'pending' | 'partial' | 'paid';
   notes?: string;
-  checked_out_by: number;
+  processed_by?: number;
+  created_at?: string;
+}
+
+interface CheckOutCreatePayload {
+  reservation_id: number;
+  check_in_id: number;
+  actual_check_out?: string;
+  final_amount: number;
+  payment_status?: 'pending' | 'partial' | 'paid';
+  notes?: string;
+  additional_charges?: { service_id: number; quantity: number; unit_price: number }[];
+  guest_id: number;
 }
 
 interface ResponseCheckOuts {
@@ -36,9 +47,9 @@ export const checkoutApi = {
     return await apiGet(`/checkout/traer-por-reserva/${reservationId}`);
   },
 
-  // POST /api/checkout/realizar
-  realizar: async (data: Omit<CheckOut, "id">): Promise<{ ok: boolean; checkout: CheckOut }> => {
-    return await apiPost("/checkout/realizar", data);
+  // POST /api/checkout/crear
+  realizar: async (data: CheckOutCreatePayload): Promise<{ ok: boolean; checkOut: CheckOut; msg: string }> => {
+    return await apiPost("/checkout/crear", data);
   },
 
   // PUT /api/checkout/actualizar/:id

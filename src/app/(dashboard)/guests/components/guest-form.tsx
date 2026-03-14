@@ -20,6 +20,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { guestSchema, type GuestFormValues } from "@/lib/hotel-schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useActiveTiposDocumento } from "@/hooks/useTiposDocumento";
+import { useActivePaises } from "@/hooks/usePaises";
 
 interface GuestFormProps {
   defaultValues: GuestFormValues;
@@ -28,15 +30,15 @@ interface GuestFormProps {
   submitLabel: string;
 }
 
-const documentTypes = ["DNI", "Pasaporte", "CE"];
-const nationalities = ["Peruana", "Chilena", "Colombiana", "Argentina", "Mexicana"];
-
 export default function GuestForm({
   defaultValues,
   onSubmit,
   onCancel,
   submitLabel,
 }: GuestFormProps) {
+  const { documentTypes, isLoading: loadingDocTypes } = useActiveTiposDocumento();
+  const { countries, isLoading: loadingCountries } = useActivePaises();
+  
   const form = useForm<GuestFormValues>({
     resolver: zodResolver(guestSchema),
     defaultValues,
@@ -114,11 +116,17 @@ export default function GuestForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {documentTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
+                      {loadingDocTypes ? (
+                        <SelectItem value="loading" disabled>
+                          Cargando...
                         </SelectItem>
-                      ))}
+                      ) : (
+                        documentTypes.map((type) => (
+                          <SelectItem key={type.id} value={type.id.toString()}>
+                            {type.name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -181,29 +189,23 @@ export default function GuestForm({
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Nacionalidad" />
+                        <SelectValue placeholder="País" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {nationalities.map((item) => (
-                        <SelectItem key={item} value={item}>
-                          {item}
+                      {loadingCountries ? (
+                        <SelectItem value="loading" disabled>
+                          Cargando...
                         </SelectItem>
-                      ))}
+                      ) : (
+                        countries.map((country) => (
+                          <SelectItem key={country.id} value={country.id.toString()}>
+                            {country.name} ({country.nationality})
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="country"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input {...field} placeholder="País de residencia" />
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

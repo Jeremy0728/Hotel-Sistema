@@ -20,13 +20,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { roomSchema, type RoomFormValues } from "@/lib/hotel-schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import type { RoomType } from "@/hooks/useRoomTypes";
 
 interface RoomFormProps {
   defaultValues: RoomFormValues;
   onSubmit: (values: RoomFormValues) => void;
   onCancel: () => void;
   submitLabel: string;
-  typeOptions: string[];
+  roomTypes: RoomType[];
 }
 
 const statusOptions = [
@@ -42,7 +43,7 @@ export default function RoomForm({
   onSubmit,
   onCancel,
   submitLabel,
-  typeOptions,
+  roomTypes,
 }: RoomFormProps) {
   const form = useForm<RoomFormValues>({
     resolver: zodResolver(roomSchema),
@@ -73,24 +74,24 @@ export default function RoomForm({
           name="type"
           render={({ field }) => (
             <FormItem>
-              <FormControl>
-                <Input
-                  {...field}
-                  placeholder="Tipo (Individual, Doble, Suite)"
-                  list="room-type-list"
-                />
-              </FormControl>
+              <Select value={field.value} onValueChange={field.onChange}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tipo de habitación" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {roomTypes.map((roomType) => (
+                    <SelectItem key={roomType.id} value={roomType.id.toString()}>
+                      {roomType.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
         />
-        {typeOptions.length ? (
-          <datalist id="room-type-list">
-            {typeOptions.map((type) => (
-              <option key={type} value={type} />
-            ))}
-          </datalist>
-        ) : null}
 
         <FormField
           control={form.control}

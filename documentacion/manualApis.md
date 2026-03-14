@@ -763,6 +763,83 @@ GET /api/tipos-documento/traer-todos?page=1&limit=10&is_active=true
 - Use el parámetro `is_active=true` para obtener solo los tipos activos
 
 ---
+## Países (Countries)
+
+Base URL: `/api/paises`
+
+**Autenticación:** Todas las rutas requieren token JWT
+
+**Descripción:** Este módulo gestiona los países disponibles en el sistema, incluyendo información de códigos, nacionalidades y códigos telefónicos.
+
+### 1. Obtener Todos los Países
+
+**Endpoint:** `GET /api/paises/traer-todos`
+
+**Descripción:** Obtiene lista de países con paginación y filtros.
+
+**Permiso Requerido:** `catalogos.leer`
+
+**Query Parameters:**
+- `page` (opcional): Número de página (default: 1)
+- `limit` (opcional): Cantidad de resultados por página (default: 10, max: 100)
+- `is_active` (opcional): Filtrar por estado activo (true/false)
+
+**Ejemplo de Request:**
+```
+GET /api/paises/traer-todos?page=1&limit=20&is_active=true
+```
+
+**Respuesta Exitosa (200):**
+```json
+{
+  "ok": true,
+  "countries": [
+    {
+      "id": 1,
+      "code": "PE",
+      "name": "Perú",
+      "nationality": "Peruana",
+      "phone_code": "+51",
+      "is_active": true
+    },
+    {
+      "id": 2,
+      "code": "US",
+      "name": "Estados Unidos",
+      "nationality": "Estadounidense",
+      "phone_code": "+1",
+      "is_active": true
+    },
+    {
+      "id": 3,
+      "code": "AR",
+      "name": "Argentina",
+      "nationality": "Argentina",
+      "phone_code": "+54",
+      "is_active": true
+    },
+    {
+      "id": 4,
+      "code": "BR",
+      "name": "Brasil",
+      "nationality": "Brasileña",
+      "phone_code": "+55",
+      "is_active": true
+    }
+  ],
+  "totalCount": 4,
+  "currentPage": 1,
+  "totalPages": 1
+}
+```
+
+**Notas:**
+- Los resultados están ordenados alfabéticamente por nombre
+- Por defecto muestra todos los países (activos e inactivos)
+- Use el parámetro `is_active=true` para obtener solo los países activos
+- Incluye información de nacionalidad y código telefónico internacional
+
+---
 ---
 
 ## Catálogo de Módulos

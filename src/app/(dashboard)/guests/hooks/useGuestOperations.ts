@@ -1,30 +1,46 @@
 import { useState, useMemo } from 'react';
+import { huespedesApi } from '@/apis/huespedes.api';
+import toast from 'react-hot-toast';
+
+interface DocumentType {
+  id: number;
+  code: string;
+  name: string;
+}
+
+interface Country {
+  id: number;
+  code: string;
+  name: string;
+  nationality: string;
+}
 
 interface Guest {
   id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  document_type: string;
-  document_number: string;
-  nationality?: string;
+  nombres: string;
+  apellido_paterno: string;
+  apellido_materno?: string;
+  document_type_id?: number;
+  document_number?: string;
+  document_type?: string;
+  email?: string;
+  phone?: string;
   date_of_birth?: string;
   address?: string;
   city?: string;
-  country?: string;
+  country_id?: number;
+  documentType?: DocumentType;
+  country?: Country;
 }
 
 interface UseGuestOperationsProps {
   guests: Guest[];
-  onAddGuest?: (guest: Omit<Guest, 'id'>) => Promise<void>;
-  onUpdateGuest?: (id: number, updates: Partial<Guest>) => Promise<void>;
+  refreshGuests: () => void;
 }
 
 export function useGuestOperations({
   guests,
-  onAddGuest,
-  onUpdateGuest,
+  refreshGuests,
 }: UseGuestOperationsProps) {
   const [search, setSearch] = useState('');
   const [nationalityFilter, setNationalityFilter] = useState('all');
@@ -36,12 +52,12 @@ export function useGuestOperations({
 
   // Extraer opciones únicas de nacionalidades y tipos de documento
   const nationalities = useMemo(
-    () => Array.from(new Set(guests.map((guest) => guest.nationality).filter(Boolean))),
+    () => Array.from(new Set(guests.map((guest) => guest.country?.nationality).filter(Boolean))),
     [guests]
   );
 
   const documentTypes = useMemo(
-    () => Array.from(new Set(guests.map((guest) => guest.document_type))),
+    () => Array.from(new Set(guests.map((guest) => guest.document_type).filter(Boolean))),
     [guests]
   );
 
@@ -49,13 +65,13 @@ export function useGuestOperations({
   const filteredGuests = useMemo(() => {
     return guests.filter((guest) => {
       const query = search.toLowerCase();
-      const fullName = `${guest.first_name} ${guest.last_name}`.toLowerCase();
+      const fullName = `${guest.nombres} ${guest.apellido_paterno} ${guest.apellido_materno || ''}`.toLowerCase();
       const matchesSearch =
         fullName.includes(query) ||
-        guest.document_number.toLowerCase().includes(query) ||
-        guest.email.toLowerCase().includes(query);
+        (guest.document_number && guest.document_number.toLowerCase().includes(query)) ||
+        (guest.email && guest.email.toLowerCase().includes(query));
       const matchesNationality =
-        nationalityFilter === 'all' ? true : guest.nationality === nationalityFilter;
+        nationalityFilter === 'all' ? true : guest.country?.nationality === nationalityFilter;
       const matchesDocument =
         documentFilter === 'all' ? true : guest.document_type === documentFilter;
       return matchesSearch && matchesNationality && matchesDocument;
@@ -87,35 +103,49 @@ export function useGuestOperations({
     setEditingGuest(null);
   };
 
+  const handleAddGuest = async (guestData: Omit<Guest, 'id'>) => {
+    try {
+      await huespedesApi.crear(guestData);
+      toast.success('Huésped creado exitosamente');
+      refreshGuests();
+    } catch (error) {
+      console.error('Error al crear huésped:', error);
+      toast.error('Error al crear huésped');
+      throw error;
+    }
+  };
+
+  const handleUpdateGuest = async (id: number, updates: Partial<Guest>) => {
+    try {
+      await huespedesApi.actualizar(id, updates);
+      toast.success('Huésped actualizado exitosamente');
+      refreshGuests();
+    } catch (error) {
+      console.error('Error al actualizar huésped:', error);
+      toast.error('Error al actualizar huésped');
+      throw error;
+    }
+  };
+
   const handleSubmit = async (values: any) => {
-    if (editingGuest && onUpdateGuest) {
-      await onUpdateGuest(editingGuest.id, {
-        first_name: values.firstName,
-        last_name: values.lastName,
-        document_type: values.documentType,
-        document_number: values.documentNumber,
-        email: values.email || '',
-        phone: values.phone,
-        nationality: values.nationality,
-        country: values.country,
-        city: values.city,
-        address: values.address,
-        date_of_birth: values.birthDate,
-      });
-    } else if (onAddGuest) {
-      await onAddGuest({
-        first_name: values.firstName,
-        last_name: values.lastName,
-        document_type: values.documentType,
-        document_number: values.documentNumber,
-        email: values.email || '',
-        phone: values.phone,
-        nationality: values.nationality,
-        country: values.country,
-        city: values.city,
-        address: values.address,
-        date_of_birth: values.birthDate,
-      });
+    const guestData = {
+      nombres: values.firstName,
+      apellido_paterno: values.lastName,
+      apellido_materno: values.secondLastName || undefined,
+      document_type_id: values.documentType ? parseInt(values.documentType, 10) : undefined,
+      document_number: values.documentNumber || undefined,
+      email: values.email || undefined,
+      phone: values.phone || undefined,
+      country_id: values.nationality ? parseInt(values.nationality, 10) : undefined,
+      city: values.city || undefined,
+      address: values.address || undefined,
+      date_of_birth: values.birthDate || undefined,
+    };
+
+    if (editingGuest) {
+      await handleUpdateGuest(editingGuest.id, guestData);
+    } else {
+      await handleAddGuest(guestData);
     }
     handleCloseForm();
   };

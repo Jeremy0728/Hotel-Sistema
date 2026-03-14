@@ -10,11 +10,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import EmptyState from "@/components/hotel/empty-state";
 import StatusBadge from "@/components/hotel/status-badge";
-import { useHotelData } from "@/contexts/HotelDataContext";
-import type { Guest, Reservation } from "@/types/hotel";
+import { useGuest } from "@/hooks/useGuests";
+import { useReservations } from "@/hooks/useReservations";
 import type { GuestFormValues } from "@/lib/hotel-schemas";
 import GuestForm from "./guest-form";
 import Link from "next/link";
+import { huespedesApi } from "@/apis/huespedes.api";
+import toast from "react-hot-toast";
 
 interface GuestProfilePageProps {
   guestId: string;
@@ -23,32 +25,59 @@ interface GuestProfilePageProps {
 const formatDate = (value?: string) => value || "-";
 
 export default function GuestProfilePage({ guestId }: GuestProfilePageProps) {
-  const { guests, reservations, updateGuest } = useHotelData();
+  const guestIdNum = parseInt(guestId, 10);
+  const { guest, isLoading: guestLoading, refreshGuest } = useGuest(guestIdNum);
+  const { reservations, isLoading: reservationsLoading } = useReservations({ guest_id: guestIdNum });
+  
   const [editOpen, setEditOpen] = useState(false);
   const [prefEditing, setPrefEditing] = useState(false);
   const [prefError, setPrefError] = useState<string | null>(null);
   const [prefSuccess, setPrefSuccess] = useState<string | null>(null);
-
-  const guest = useMemo(() => guests.find((item) => item.id === guestId), [guests, guestId]);
   const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
 
   const guestReservations = useMemo(() => {
     return reservations.filter((reservation) => {
-      if (reservation.guestId === guestId) return true;
-      return reservation.additionalGuestIds?.includes(guestId) ?? false;
+      // Incluir si es el huésped principal
+      if (reservation.guest_id === guestIdNum) return true;
+      
+      // Incluir si está en la lista de huéspedes adicionales
+      if (reservation.reservationGuests) {
+        return reservation.reservationGuests.some(
+          (rg) => rg.guest_id === guestIdNum
+        );
+      }
+      
+      return false;
     });
-  }, [reservations, guestId]);
+  }, [reservations, guestIdNum]);
 
-  const [preferencesText, setPreferencesText] = useState("{}");
+  const [preferencesText, setPreferencesText] = useState(() => {
+    if (!guest) return "{}";
+    const initial = guest.preferences ?? {};
+    return JSON.stringify(initial, null, 2);
+  });
 
   useEffect(() => {
     if (!guest) return;
     const initial = guest.preferences ?? {};
-    setPreferencesText(JSON.stringify(initial, null, 2));
+    const newText = JSON.stringify(initial, null, 2);
+    setPreferencesText(newText);
     setPrefEditing(false);
     setPrefError(null);
     setPrefSuccess(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guest?.id]);
+
+  if (guestLoading || reservationsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3">
+          <div className="h-8 w-8 animate-spin mx-auto border-4 border-primary border-t-transparent rounded-full" />
+          <p className="text-sm text-neutral-500">Cargando perfil...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!guest) {
     return (
@@ -65,56 +94,63 @@ export default function GuestProfilePage({ guestId }: GuestProfilePageProps) {
   }
 
   const reservationsSorted = [...guestReservations].sort((a, b) =>
-    a.checkIn < b.checkIn ? 1 : -1
+    a.check_in_date < b.check_in_date ? 1 : -1
   );
-  const upcoming = guestReservations.filter((item) => item.checkIn >= todayStr);
-  const past = guestReservations.filter((item) => item.checkOut < todayStr);
+  const upcoming = guestReservations.filter((item) => item.check_in_date >= todayStr);
+  const past = guestReservations.filter((item) => item.check_out_date < todayStr);
   const totalSpent = guestReservations
     .filter((item) => item.status !== "cancelled")
-    .reduce((sum, item) => sum + item.total, 0);
+    .reduce((sum, item) => sum + parseFloat(item.total_amount || "0"), 0);
   const frequent = guestReservations.length >= 3;
 
-  const handleSubmit = (values: GuestFormValues) => {
-    updateGuest(guest.id, {
-      firstName: values.firstName,
-      lastName: values.lastName,
-      secondLastName: values.secondLastName,
-      documentType: values.documentType,
-      documentNumber: values.documentNumber,
-      email: values.email || "",
-      phone: values.phone,
-      nationality: values.nationality,
-      country: values.country,
-      city: values.city,
-      address: values.address,
-      birthDate: values.birthDate,
-    });
-    setEditOpen(false);
+  const handleSubmit = async (values: GuestFormValues) => {
+    try {
+      await huespedesApi.actualizar(guest.id, {
+        nombres: values.firstName,
+        apellido_paterno: values.lastName,
+        apellido_materno: values.secondLastName || undefined,
+        document_type_id: values.documentType ? parseInt(values.documentType, 10) : undefined,
+        document_number: values.documentNumber || undefined,
+        email: values.email || undefined,
+        phone: values.phone || undefined,
+        country_id: values.nationality ? parseInt(values.nationality, 10) : undefined,
+        city: values.city || undefined,
+        address: values.address || undefined,
+        date_of_birth: values.birthDate || undefined,
+      });
+      toast.success('Huésped actualizado exitosamente');
+      refreshGuest();
+      setEditOpen(false);
+    } catch (error) {
+      console.error('Error al actualizar huésped:', error);
+      toast.error('Error al actualizar huésped');
+    }
   };
 
   const defaultValues: GuestFormValues = {
-    firstName: guest.firstName,
-    lastName: guest.lastName,
-    secondLastName: guest.secondLastName ?? "",
-    birthDate: guest.birthDate ?? "",
-    documentType: guest.documentType,
-    documentNumber: guest.documentNumber,
-    email: guest.email,
-    phone: guest.phone,
-    nationality: guest.nationality,
-    country: guest.country ?? "",
+    firstName: guest.nombres,
+    lastName: guest.apellido_paterno,
+    secondLastName: guest.apellido_materno ?? "",
+    birthDate: guest.date_of_birth ?? "",
+    documentType: guest.document_type_id?.toString() ?? "",
+    documentNumber: guest.document_number ?? "",
+    email: guest.email ?? "",
+    phone: guest.phone ?? "",
+    nationality: guest.country_id?.toString() ?? "",
+    country: guest.country?.name ?? "",
     city: guest.city ?? "",
     address: guest.address ?? "",
   };
 
-  const handleSavePreferences = () => {
+  const handleSavePreferences = async () => {
     setPrefError(null);
     setPrefSuccess(null);
     try {
       const parsed = preferencesText.trim() ? JSON.parse(preferencesText) : {};
-      updateGuest(guest.id, { preferences: parsed });
+      await huespedesApi.actualizar(guest.id, { preferences: parsed });
       setPrefSuccess("Preferencias guardadas.");
       setPrefEditing(false);
+      refreshGuest();
     } catch (error) {
       setPrefError("JSON invalido. Revisa el formato.");
     }
@@ -127,7 +163,7 @@ export default function GuestProfilePage({ guestId }: GuestProfilePageProps) {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold">
-                {guest.firstName} {guest.lastName} {guest.secondLastName}
+                {guest.nombres} {guest.apellido_paterno} {guest.apellido_materno}
               </h2>
               {frequent ? (
                 <Badge className="rounded-full bg-emerald-100 text-emerald-700">
@@ -136,7 +172,7 @@ export default function GuestProfilePage({ guestId }: GuestProfilePageProps) {
               ) : null}
             </div>
             <p className="text-sm text-neutral-500 dark:text-neutral-300">
-              Documento: {guest.documentType} {guest.documentNumber}
+              Documento: {guest.documentType?.name || guest.document_type} {guest.document_number}
             </p>
           </div>
           <div className="flex flex-wrap gap-2 text-sm text-neutral-500 dark:text-neutral-300">
@@ -164,14 +200,14 @@ export default function GuestProfilePage({ guestId }: GuestProfilePageProps) {
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-neutral-600 dark:text-neutral-300">
-              <div>Nombre: {guest.firstName}</div>
-              <div>Apellido: {guest.lastName} {guest.secondLastName}</div>
-              <div>Documento: {guest.documentType} {guest.documentNumber}</div>
+              <div>Nombre: {guest.nombres}</div>
+              <div>Apellido: {guest.apellido_paterno} {guest.apellido_materno}</div>
+              <div>Documento: {guest.documentType?.name || guest.document_type} {guest.document_number}</div>
               <div>Email: {guest.email || "-"}</div>
-              <div>Telefono: {guest.phone}</div>
-              <div>Fecha nacimiento: {formatDate(guest.birthDate)}</div>
-              <div>Nacionalidad: {guest.nationality}</div>
-              <div>Pais: {guest.country || "-"}</div>
+              <div>Telefono: {guest.phone || "-"}</div>
+              <div>Fecha nacimiento: {formatDate(guest.date_of_birth)}</div>
+              <div>Nacionalidad: {guest.country?.nationality || "-"}</div>
+              <div>Pais: {guest.country?.name || "-"}</div>
               <div>Ciudad: {guest.city || "-"}</div>
               <div>Direccion: {guest.address || "-"}</div>
             </div>
@@ -204,13 +240,13 @@ export default function GuestProfilePage({ guestId }: GuestProfilePageProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {reservationsSorted.map((reservation: Reservation) => (
+                  {reservationsSorted.map((reservation) => (
                     <TableRow key={reservation.id}>
-                      <TableCell className="font-medium">{reservation.code}</TableCell>
-                      <TableCell>#{reservation.roomNumber}</TableCell>
-                      <TableCell>{reservation.checkIn}</TableCell>
-                      <TableCell>{reservation.checkOut}</TableCell>
-                      <TableCell>S/ {reservation.total}</TableCell>
+                      <TableCell className="font-medium">{reservation.confirmation_code}</TableCell>
+                      <TableCell>#{reservation.room?.number || '-'}</TableCell>
+                      <TableCell>{reservation.check_in_date}</TableCell>
+                      <TableCell>{reservation.check_out_date}</TableCell>
+                      <TableCell>S/ {reservation.total_amount}</TableCell>
                       <TableCell>
                         <StatusBadge type="reservation" status={reservation.status} />
                       </TableCell>

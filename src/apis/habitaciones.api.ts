@@ -1,63 +1,56 @@
 import { apiGet, apiPost, apiPut, apiPatch, apiDelete } from "@/lib/api/apiWrapper";
-
-interface Habitacion {
-  id: number;
-  number: string;
-  room_type_id: number;
-  floor: number;
-  status: "available" | "occupied" | "maintenance" | "cleaning";
-  notes?: string;
-  is_active: boolean;
-}
-
-interface ResponseHabitaciones {
-  ok: boolean;
-  habitaciones: Habitacion[];
-  total: number;
-  page: number;
-  totalPages: number;
-}
+import type {
+  RoomStatus,
+  CreateRoomData,
+  UpdateRoomData,
+  RoomsResponse,
+  RoomResponse,
+  RoomMutationResponse,
+  RoomDeleteResponse,
+  AvailableRoomsResponse,
+  RoomsByFloorResponse,
+} from "@/types/room";
 
 export const habitacionesApi = {
   // GET /api/habitaciones/traer-todos
-  traerTodos: async (page = 1, limit = 10, status?: string): Promise<ResponseHabitaciones> => {
+  traerTodos: async (page = 1, limit = 10, status?: RoomStatus): Promise<RoomsResponse> => {
     const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
     if (status) params.append("status", status);
-    return await apiGet<ResponseHabitaciones>(`/habitaciones/traer-todos?${params}`);
+    return await apiGet<RoomsResponse>(`/habitaciones/traer-todos?${params}`);
   },
 
   // GET /api/habitaciones/traer-por-id/:id
-  traerPorId: async (id: number): Promise<{ ok: boolean; habitacion: Habitacion }> => {
-    return await apiGet(`/habitaciones/traer-por-id/${id}`);
+  traerPorId: async (id: number): Promise<RoomResponse> => {
+    return await apiGet<RoomResponse>(`/habitaciones/traer-por-id/${id}`);
   },
 
   // POST /api/habitaciones/crear
-  crear: async (data: Omit<Habitacion, "id">): Promise<{ ok: boolean; habitacion: Habitacion }> => {
-    return await apiPost("/habitaciones/crear", data);
+  crear: async (data: CreateRoomData): Promise<RoomMutationResponse> => {
+    return await apiPost<RoomMutationResponse>("/habitaciones/crear", data);
   },
 
   // PUT /api/habitaciones/actualizar/:id
-  actualizar: async (id: number, data: Partial<Habitacion>): Promise<{ ok: boolean; habitacion: Habitacion }> => {
-    return await apiPut(`/habitaciones/actualizar/${id}`, data);
+  actualizar: async (id: number, data: UpdateRoomData): Promise<RoomMutationResponse> => {
+    return await apiPut<RoomMutationResponse>(`/habitaciones/actualizar/${id}`, data);
   },
 
   // PATCH /api/habitaciones/cambiar-estado/:id
-  cambiarEstado: async (id: number, status: string): Promise<{ ok: boolean; habitacion: Habitacion }> => {
-    return await apiPatch(`/habitaciones/cambiar-estado/${id}`, { status });
+  cambiarEstado: async (id: number, status: RoomStatus, notes?: string): Promise<RoomMutationResponse> => {
+    return await apiPatch<RoomMutationResponse>(`/habitaciones/cambiar-estado/${id}`, { status, notes });
   },
 
   // GET /api/habitaciones/disponibles
-  obtenerDisponibles: async (): Promise<{ ok: boolean; habitaciones: Habitacion[] }> => {
-    return await apiGet("/habitaciones/disponibles");
+  obtenerDisponibles: async (): Promise<AvailableRoomsResponse> => {
+    return await apiGet<AvailableRoomsResponse>("/habitaciones/disponibles");
   },
 
   // GET /api/habitaciones/por-piso/:floor
-  obtenerPorPiso: async (floor: number): Promise<{ ok: boolean; habitaciones: Habitacion[] }> => {
-    return await apiGet(`/habitaciones/por-piso/${floor}`);
+  obtenerPorPiso: async (floor: number): Promise<RoomsByFloorResponse> => {
+    return await apiGet<RoomsByFloorResponse>(`/habitaciones/por-piso/${floor}`);
   },
 
   // DELETE /api/habitaciones/eliminar/:id
-  eliminar: async (id: number): Promise<{ ok: boolean; msg: string }> => {
-    return await apiDelete(`/habitaciones/eliminar/${id}`);
+  eliminar: async (id: number): Promise<RoomDeleteResponse> => {
+    return await apiDelete<RoomDeleteResponse>(`/habitaciones/eliminar/${id}`);
   },
 };

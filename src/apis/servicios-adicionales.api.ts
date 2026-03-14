@@ -12,17 +12,18 @@ interface ServicioAdicional {
 
 interface ResponseServiciosAdicionales {
   ok: boolean;
-  servicios: ServicioAdicional[];
-  total: number;
-  page: number;
+  services: ServicioAdicional[];
+  totalCount: number;
+  currentPage: number;
   totalPages: number;
 }
 
 export const serviciosAdicionalesApi = {
   // GET /api/servicios-adicionales/traer-todos
-  traerTodos: async (page = 1, limit = 10, category?: string): Promise<ResponseServiciosAdicionales> => {
+  traerTodos: async (page = 1, limit = 10, category?: string, is_active?: boolean): Promise<ResponseServiciosAdicionales> => {
     const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
     if (category) params.append("category", category);
+    if (is_active !== undefined) params.append("is_active", is_active.toString());
     return await apiGet<ResponseServiciosAdicionales>(`/servicios-adicionales/traer-todos?${params}`);
   },
 

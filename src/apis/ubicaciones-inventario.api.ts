@@ -1,16 +1,23 @@
 import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api/apiWrapper";
+import { Room } from "@/types/room";
+
+// Tipo para la API (usa los valores internos de la base de datos)
+type ApiLocationType = "almacen" | "minibar" | "cocina" | "bar" | "otro";
 
 interface UbicacionInventario {
   id: number;
   name: string;
   description?: string;
-  location_type: "almacen" | "minibar" | "cocina" | "bar" | "otro";
+  location_type: ApiLocationType;
+  room_id?: number | null;
   is_active: boolean;
+  created_at?: string;
+  room?: Room;
 }
 
 interface ResponseUbicaciones {
   ok: boolean;
-  ubicaciones: UbicacionInventario[];
+  locations: UbicacionInventario[];
   total: number;
   page: number;
   totalPages: number;

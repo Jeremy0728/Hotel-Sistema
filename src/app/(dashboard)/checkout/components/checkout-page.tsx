@@ -15,7 +15,8 @@ import type { ReservationStatus } from "@/types/hotel";
 
 export default function CheckOutPage() {
   // Obtener datos desde hooks individuales
-  const { reservations: apiReservations, isLoading: reservationsLoading } = useReservations({ limit: 100 });
+  const { reservations: apiReservations, isLoading: reservationsLoading, mutate: refreshReservations } = useReservations({ limit: 100 });
+  console.log("🚀 ~ CheckOutPage ~ apiReservations:", apiReservations)
   const { rooms: apiRooms } = useRooms({ limit: 100 });
   const { guests: apiGuests } = useGuests({ limit: 100 });
 
@@ -26,50 +27,25 @@ export default function CheckOutPage() {
         id: String(res.id),
         code: res.confirmation_code,
         guestId: String(res.guest_id),
-        guestName: res.huesped
-          ? `${res.huesped.nombres} ${res.huesped.apellido_paterno}`
+        guestName: res.guest
+          ? `${res.guest.nombres} ${res.guest.apellido_paterno}`
           : "Huésped",
         roomId: String(res.room_id),
-        roomNumber: res.habitacion?.number || String(res.room_id),
+        roomNumber: res.room?.number || String(res.room_id),
         status: (res.status === "checked_in" ? "checkin" :
                  res.status === "checked_out" ? "checkout" :
                  res.status) as ReservationStatus,
         checkIn: res.check_in_date,
+        checkInId: res.checkIn?.id,
         checkOut: res.check_out_date,
         nights: Math.ceil(
           (new Date(res.check_out_date).getTime() - new Date(res.check_in_date).getTime()) /
             (1000 * 60 * 60 * 24)
         ),
-        total: parseFloat(res.total_price),
+        total: parseFloat(res.total_amount),
       })),
     [apiReservations]
   );
-
-  // Funciones para completar check-out (TODO: implementar con API real)
-  const handleCompleteCheckOut = async (
-    reservationId: string,
-    formData: {
-      date: string;
-      time: string;
-      paymentMethod: string;
-      manualCharge: number;
-      discount: number;
-      notes: string;
-    },
-    total: number,
-    extras: string[]
-  ) => {
-    // TODO: Llamar a checkoutApi.realizar con los datos del formulario
-    console.log("Complete check-out:", reservationId, formData, total, extras);
-  };
-
-  const handleUpdateReservation = async (
-    reservationId: string,
-    updates: { actualCheckOut?: string; total?: number; notes?: string }
-  ) => {
-    // TODO: Actualizar reserva con API
-    console.log("Update reservation:", reservationId, updates);
-  };
 
   // Hook de operaciones de check-out
   const {
@@ -95,6 +71,7 @@ export default function CheckOutPage() {
     total,
     extraOptions,
     handleToggleExtra,
+    handleQuantityChange,
     handleSelect,
     handleComplete,
     handleCancel,
@@ -102,8 +79,7 @@ export default function CheckOutPage() {
     reservations: transformedReservations,
     guests: apiGuests,
     rooms: apiRooms,
-    onCompleteCheckOut: handleCompleteCheckOut,
-    onUpdateReservation: handleUpdateReservation,
+    onSuccess: refreshReservations,
   });
 
   if (reservationsLoading) {
@@ -166,6 +142,7 @@ export default function CheckOutPage() {
             extras={extras}
             extraOptions={extraOptions}
             onToggleExtra={handleToggleExtra}
+            onQuantityChange={handleQuantityChange}
             baseTotal={baseTotal}
             extrasTotal={extrasTotal}
             subtotal={subtotal}

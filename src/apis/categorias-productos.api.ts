@@ -10,7 +10,7 @@ interface CategoriaProducto {
 
 interface ResponseCategorias {
   ok: boolean;
-  categorias: CategoriaProducto[];
+  productCategories: CategoriaProducto[];
   total: number;
   page: number;
   totalPages: number;

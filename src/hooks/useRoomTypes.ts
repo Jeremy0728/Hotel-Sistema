@@ -5,7 +5,7 @@ export interface RoomType {
   id: number;
   name: string;
   description?: string;
-  base_price: string;
+  base_price?: string;
   max_occupancy: number;
   amenities?: Record<string, unknown>;
   is_active: boolean;
@@ -24,10 +24,10 @@ export function useRoomTypes(options: UseRoomTypesOptions = {}) {
     async () => {
       const response = await tiposHabitacionApi.traerTodos(page, limit);
       return {
-        roomTypes: response.tipos || [],
-        total: response.total,
-        page: response.page,
-        totalPages: response.totalPages,
+        roomTypes: response.roomTypes || [],
+        total: response.total || 0,
+        page: response.page || 1,
+        totalPages: response.totalPages || 1,
       };
     },
     {

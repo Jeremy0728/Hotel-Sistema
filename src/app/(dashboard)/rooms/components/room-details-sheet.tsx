@@ -36,7 +36,6 @@ export default function RoomDetailsSheet({
   setDrawerNotes,
   updateRoom,
 }: RoomDetailsSheetProps) {
-  console.log("🚀 ~ RoomDetailsSheet ~ selectedSnapshot:", selectedSnapshot)
   const router = useRouter();
 
   if (!selectedSnapshot) return null;
