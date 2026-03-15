@@ -691,155 +691,7 @@ Base URL: `/api/planes`
   "msg": "Módulo removido correctamente"
 }
 ```
-## Tipos de Documento (Document Types)
 
-Base URL: `/api/tipos-documento`
-
-**Autenticación:** Todas las rutas requieren token JWT
-
-**Descripción:** Este módulo gestiona los tipos de documento de identidad disponibles en el sistema (DNI, Pasaporte, Carné de Extranjería, etc.).
-
-### 1. Obtener Todos los Tipos de Documento
-
-**Endpoint:** `GET /api/tipos-documento/traer-todos`
-
-**Descripción:** Obtiene lista de tipos de documento con paginación y filtros.
-
-**Permiso Requerido:** `catalogos.leer`
-
-**Query Parameters:**
-- `page` (opcional): Número de página (default: 1)
-- `limit` (opcional): Cantidad de resultados por página (default: 10, max: 100)
-- `is_active` (opcional): Filtrar por estado activo (true/false)
-
-**Ejemplo de Request:**
-```
-GET /api/tipos-documento/traer-todos?page=1&limit=10&is_active=true
-```
-
-**Respuesta Exitosa (200):**
-```json
-{
-  "ok": true,
-  "documentTypes": [
-    {
-      "id": 1,
-      "code": "DNI",
-      "name": "Documento Nacional de Identidad",
-      "description": "Documento de identidad para ciudadanos peruanos",
-      "is_active": true
-    },
-    {
-      "id": 2,
-      "code": "CE",
-      "name": "Carné de Extranjería",
-      "description": "Documento para extranjeros residentes en Perú",
-      "is_active": true
-    },
-    {
-      "id": 3,
-      "code": "PASSPORT",
-      "name": "Pasaporte",
-      "description": "Documento de viaje internacional",
-      "is_active": true
-    },
-    {
-      "id": 4,
-      "code": "RUC",
-      "name": "Registro Único de Contribuyentes",
-      "description": "Documento de identificación tributaria",
-      "is_active": true
-    }
-  ],
-  "totalCount": 4,
-  "currentPage": 1,
-  "totalPages": 1
-}
-```
-
-**Notas:**
-- Los resultados están ordenados alfabéticamente por nombre
-- Por defecto muestra todos los tipos de documento (activos e inactivos)
-- Use el parámetro `is_active=true` para obtener solo los tipos activos
-
----
-## Países (Countries)
-
-Base URL: `/api/paises`
-
-**Autenticación:** Todas las rutas requieren token JWT
-
-**Descripción:** Este módulo gestiona los países disponibles en el sistema, incluyendo información de códigos, nacionalidades y códigos telefónicos.
-
-### 1. Obtener Todos los Países
-
-**Endpoint:** `GET /api/paises/traer-todos`
-
-**Descripción:** Obtiene lista de países con paginación y filtros.
-
-**Permiso Requerido:** `catalogos.leer`
-
-**Query Parameters:**
-- `page` (opcional): Número de página (default: 1)
-- `limit` (opcional): Cantidad de resultados por página (default: 10, max: 100)
-- `is_active` (opcional): Filtrar por estado activo (true/false)
-
-**Ejemplo de Request:**
-```
-GET /api/paises/traer-todos?page=1&limit=20&is_active=true
-```
-
-**Respuesta Exitosa (200):**
-```json
-{
-  "ok": true,
-  "countries": [
-    {
-      "id": 1,
-      "code": "PE",
-      "name": "Perú",
-      "nationality": "Peruana",
-      "phone_code": "+51",
-      "is_active": true
-    },
-    {
-      "id": 2,
-      "code": "US",
-      "name": "Estados Unidos",
-      "nationality": "Estadounidense",
-      "phone_code": "+1",
-      "is_active": true
-    },
-    {
-      "id": 3,
-      "code": "AR",
-      "name": "Argentina",
-      "nationality": "Argentina",
-      "phone_code": "+54",
-      "is_active": true
-    },
-    {
-      "id": 4,
-      "code": "BR",
-      "name": "Brasil",
-      "nationality": "Brasileña",
-      "phone_code": "+55",
-      "is_active": true
-    }
-  ],
-  "totalCount": 4,
-  "currentPage": 1,
-  "totalPages": 1
-}
-```
-
-**Notas:**
-- Los resultados están ordenados alfabéticamente por nombre
-- Por defecto muestra todos los países (activos e inactivos)
-- Use el parámetro `is_active=true` para obtener solo los países activos
-- Incluye información de nacionalidad y código telefónico internacional
-
----
 ---
 
 ## Catálogo de Módulos
@@ -2081,6 +1933,157 @@ GET /api/huespedes/buscar-por-documento?country_id=1&q=pérez
 
 ---
 
+## Tipos de Documento (Document Types)
+
+Base URL: `/api/tipos-documento`
+
+**Autenticación:** Todas las rutas requieren token JWT
+
+**Descripción:** Este módulo gestiona los tipos de documento de identidad disponibles en el sistema (DNI, Pasaporte, Carné de Extranjería, etc.).
+
+### 1. Obtener Todos los Tipos de Documento
+
+**Endpoint:** `GET /api/tipos-documento/traer-todos`
+
+**Descripción:** Obtiene lista de tipos de documento con paginación y filtros.
+
+**Permiso Requerido:** `catalogos.leer`
+
+**Query Parameters:**
+- `page` (opcional): Número de página (default: 1)
+- `limit` (opcional): Cantidad de resultados por página (default: 10, max: 100)
+- `is_active` (opcional): Filtrar por estado activo (true/false)
+
+**Ejemplo de Request:**
+```
+GET /api/tipos-documento/traer-todos?page=1&limit=10&is_active=true
+```
+
+**Respuesta Exitosa (200):**
+```json
+{
+  "ok": true,
+  "documentTypes": [
+    {
+      "id": 1,
+      "code": "DNI",
+      "name": "Documento Nacional de Identidad",
+      "description": "Documento de identidad para ciudadanos peruanos",
+      "is_active": true
+    },
+    {
+      "id": 2,
+      "code": "CE",
+      "name": "Carné de Extranjería",
+      "description": "Documento para extranjeros residentes en Perú",
+      "is_active": true
+    },
+    {
+      "id": 3,
+      "code": "PASSPORT",
+      "name": "Pasaporte",
+      "description": "Documento de viaje internacional",
+      "is_active": true
+    },
+    {
+      "id": 4,
+      "code": "RUC",
+      "name": "Registro Único de Contribuyentes",
+      "description": "Documento de identificación tributaria",
+      "is_active": true
+    }
+  ],
+  "totalCount": 4,
+  "currentPage": 1,
+  "totalPages": 1
+}
+```
+
+**Notas:**
+- Los resultados están ordenados alfabéticamente por nombre
+- Por defecto muestra todos los tipos de documento (activos e inactivos)
+- Use el parámetro `is_active=true` para obtener solo los tipos activos
+
+---
+
+## Países (Countries)
+
+Base URL: `/api/paises`
+
+**Autenticación:** Todas las rutas requieren token JWT
+
+**Descripción:** Este módulo gestiona los países disponibles en el sistema, incluyendo información de códigos, nacionalidades y códigos telefónicos.
+
+### 1. Obtener Todos los Países
+
+**Endpoint:** `GET /api/paises/traer-todos`
+
+**Descripción:** Obtiene lista de países con paginación y filtros.
+
+**Permiso Requerido:** `catalogos.leer`
+
+**Query Parameters:**
+- `page` (opcional): Número de página (default: 1)
+- `limit` (opcional): Cantidad de resultados por página (default: 10, max: 100)
+- `is_active` (opcional): Filtrar por estado activo (true/false)
+
+**Ejemplo de Request:**
+```
+GET /api/paises/traer-todos?page=1&limit=20&is_active=true
+```
+
+**Respuesta Exitosa (200):**
+```json
+{
+  "ok": true,
+  "countries": [
+    {
+      "id": 1,
+      "code": "PE",
+      "name": "Perú",
+      "nationality": "Peruana",
+      "phone_code": "+51",
+      "is_active": true
+    },
+    {
+      "id": 2,
+      "code": "US",
+      "name": "Estados Unidos",
+      "nationality": "Estadounidense",
+      "phone_code": "+1",
+      "is_active": true
+    },
+    {
+      "id": 3,
+      "code": "AR",
+      "name": "Argentina",
+      "nationality": "Argentina",
+      "phone_code": "+54",
+      "is_active": true
+    },
+    {
+      "id": 4,
+      "code": "BR",
+      "name": "Brasil",
+      "nationality": "Brasileña",
+      "phone_code": "+55",
+      "is_active": true
+    }
+  ],
+  "totalCount": 4,
+  "currentPage": 1,
+  "totalPages": 1
+}
+```
+
+**Notas:**
+- Los resultados están ordenados alfabéticamente por nombre
+- Por defecto muestra todos los países (activos e inactivos)
+- Use el parámetro `is_active=true` para obtener solo los países activos
+- Incluye información de nacionalidad y código telefónico internacional
+
+---
+
 ## Catálogos
 
 Base URL: `/api/catalogo`
@@ -2088,70 +2091,6 @@ Base URL: `/api/catalogo`
 **Autenticación:** Todas las rutas requieren token JWT
 
 **Nota:** Estos son catálogos de solo lectura (sin CRUD)
-
-### 1. Obtener Tipos de Documento
-
-**Endpoint:** `GET /api/catalogo/tipos-documento`
-
-**Descripción:** Obtiene lista de tipos de documento activos.
-
-**Respuesta Exitosa (200):**
-```json
-{
-  "ok": true,
-  "data": [
-    {
-      "id": 1,
-      "code": "DNI",
-      "name": "DNI - Documento Nacional de Identidad",
-      "description": "Documento de identidad para ciudadanos peruanos"
-    },
-    {
-      "id": 2,
-      "code": "CE",
-      "name": "CE - Carnet de Extranjería",
-      "description": "Documento para extranjeros residentes en Perú"
-    },
-    {
-      "id": 3,
-      "code": "PASSPORT",
-      "name": "Pasaporte",
-      "description": "Documento de viaje internacional"
-    }
-  ]
-}
-```
-
----
-
-### 2. Obtener Países
-
-**Endpoint:** `GET /api/catalogo/paises`
-
-**Descripción:** Obtiene lista de países activos con sus nacionalidades.
-
-**Respuesta Exitosa (200):**
-```json
-{
-  "ok": true,
-  "data": [
-    {
-      "id": 1,
-      "code": "PER",
-      "name": "Perú",
-      "nationality": "Peruana",
-      "phone_code": "+51"
-    },
-    {
-      "id": 2,
-      "code": "ARG",
-      "name": "Argentina",
-      "nationality": "Argentina",
-      "phone_code": "+54"
-    }
-  ]
-}
-```
 
 ---
 
@@ -2583,16 +2522,53 @@ Base URL: `/api/reservas`
 
 ---
 
-### 5. Confirmar Reserva
+### 5. Cambiar Estado de Reserva
 
-**Endpoint:** `PATCH /api/reservas/confirmar/:id`
+**Endpoint:** `PATCH /api/reservas/cambiar-estado/:id`
 
-**Descripción:** Confirma una reserva pendiente.
+**Descripción:** Cambia el estado de una reserva a cualquier estado válido.
 
-**Permiso Requerido:** `reservas.editar`
+**Permiso Requerido:** `reservas.reserva.actualizar`
 
 **Parámetros URL:**
-- `id`: UUID de la reserva
+- `id`: ID de la reserva (integer)
+
+**Body:**
+```json
+{
+  "status": "confirmed",
+  "notes": "Confirmado por teléfono"
+}
+```
+
+**Validaciones:**
+- `status`: Requerido, debe ser uno de: `pending`, `confirmed`, `checked_in`, `checked_out`, `cancelled`, `no_show`
+- `notes`: Opcional, texto. Se agregará a las notas existentes de la reserva
+
+**Ejemplos de Uso:**
+
+**Confirmar una reserva:**
+```json
+{
+  "status": "confirmed"
+}
+```
+
+**Cancelar una reserva:**
+```json
+{
+  "status": "cancelled",
+  "notes": "Cliente canceló por cambio de planes"
+}
+```
+
+**Marcar como no-show:**
+```json
+{
+  "status": "no_show",
+  "notes": "Cliente no se presentó a la hora de check-in"
+}
+```
 
 **Respuesta Exitosa (200):**
 ```json
@@ -2607,98 +2583,41 @@ Base URL: `/api/reservas`
     "check_in_date": "2026-01-10",
     "check_out_date": "2026-01-15",
     "total_amount": "1000000.00",
-    "guest": { ... },
-    "room": { ... },
-    "checkIn": null
+    "notes": "Confirmado por teléfono",
+    "guest": {
+      "id": 5,
+      "nombres": "Luis",
+      "apellido_paterno": "Hernández",
+      "apellido_materno": "Castro",
+      "documentType": {
+        "id": 1,
+        "code": "DNI",
+        "name": "Documento Nacional de Identidad"
+      }
+    },
+    "room": {
+      "id": 30,
+      "number": "310",
+      "floor": 3,
+      "status": "available"
+    },
+    "checkIn": null,
+    "reservationGuests": []
   },
-  "msg": "Reserva confirmada correctamente"
+  "msg": "Estado de reserva actualizado correctamente"
 }
 ```
 
----
-
-### 6. Cancelar Reserva
-
-**Endpoint:** `PATCH /api/reservas/cancelar/:id`
-
-**Descripción:** Cancela una reserva.
-
-**Permiso Requerido:** `reservas.editar`
-
-**Parámetros URL:**
-- `id`: UUID de la reserva
-
-**Body:**
-```json
-{
-  "notes": "Cliente canceló por cambio de planes"
-}
-```
-
-**Validaciones:**
-- `notes`: Opcional, texto
-
-**Respuesta Exitosa (200):**
-```json
-{
-  "ok": true,
-  "reserva": {
-    "id": 40,
-    "confirmation_code": "RES202601049322",
-    "status": "cancelled",
-    "guest_id": 5,
-    "room_id": 30,
-    "check_in_date": "2026-01-10",
-    "check_out_date": "2026-01-15",
-    "total_amount": "1000000.00",
-    "notes": "CANCELLED: Cliente canceló por cambio de planes",
-    "cancelled_by": null,
-    "created_by": 1,
-    "guest": { ... },
-    "room": { ... },
-    "checkIn": null
-  },
-  "msg": "Reserva cancelada correctamente"
-}
-```
-
-**Nota:** 
-- El motivo de cancelación se agrega al campo `notes` con el prefijo "CANCELLED:"
-- Si ya existían notas previas, el motivo se agrega al final
-
----
-
-### 7. Marcar No-Show
-
-**Endpoint:** `PATCH /api/reservas/marcar-no-show/:id`
-
-**Descripción:** Marca una reserva como no-show (cliente no se presentó).
-
-**Permiso Requerido:** `reservas.editar`
-
-**Parámetros URL:**
-- `id`: UUID de la reserva
-
-**Respuesta Exitosa (200):**
-```json
-{
-  "ok": true,
-  "reserva": {
-    "id": 40,
-    "confirmation_code": "RES202601049322",
-    "status": "no_show",
-    "guest_id": 5,
-    "room_id": 30,
-    "check_in_date": "2026-01-10",
-    "check_out_date": "2026-01-15",
-    "total_amount": "1000000.00",
-    "guest": { ... },
-    "room": { ... },
-    "checkIn": null
-  },
-  "msg": "Reserva marcada como no-show"
-}
-```
+**Notas:**
+- Este endpoint reemplaza los anteriores endpoints `/confirmar`, `/cancelar` y `/marcar-no-show`
+- Si se proporcionan `notes`, se agregarán a las notas existentes de la reserva (no las reemplazan)
+- Los estados válidos son:
+  - `pending`: Reserva pendiente de confirmación
+  - `confirmed`: Reserva confirmada
+  - `checked_in`: Cliente ya hizo check-in
+  - `checked_out`: Cliente ya hizo check-out
+  - `cancelled`: Reserva cancelada
+  - `no_show`: Cliente no se presentó
 
 ---
 
@@ -5037,7 +4956,7 @@ GET /api/ubicaciones-inventario/traer-todos?page=1&limit=10&location_type=wareho
       "room": {
         "id": 5,
         "number": "101",
-        "room_type": "standard"
+        "room_type_id": 3
       }
     }
   ],
@@ -5046,6 +4965,11 @@ GET /api/ubicaciones-inventario/traer-todos?page=1&limit=10&location_type=wareho
   "totalPages": 2
 }
 ```
+
+**Nota:**
+- El campo `room` contiene información de la habitación asociada (si `room_id` no es null)
+- Si la ubicación no está asociada a una habitación, `room` será `null`
+- Los campos de `room` incluyen: `id`, `number`, `room_type_id`
 
 ---
 
@@ -5065,16 +4989,25 @@ GET /api/ubicaciones-inventario/traer-todos?page=1&limit=10&location_type=wareho
 {
   "ok": true,
   "location": {
-    "id": 1,
-    "name": "Almacén General",
-    "location_type": "warehouse",
-    "room_id": null,
+    "id": 2,
+    "name": "Minibar Habitación 101",
+    "location_type": "minibar",
+    "room_id": 5,
     "is_active": true,
     "created_at": "2024-12-01T10:00:00.000Z",
-    "room": null
+    "room": {
+      "id": 5,
+      "number": "101",
+      "room_type_id": 3
+    }
   }
 }
 ```
+
+**Nota:**
+- El campo `room` contiene información de la habitación asociada (si existe)
+- Si `room_id` es `null`, el campo `room` también será `null`
+- Los campos de `room` incluyen: `id`, `number`, `room_type_id`
 
 ---
 
@@ -5315,7 +5248,22 @@ GET /api/facturas/traer-todos?page=1&limit=10&status=pending&from_date=2024-12-0
         "id": 10,
         "confirmation_code": "RES-2024-010",
         "check_in_date": "2024-12-10",
-        "check_out_date": "2024-12-15"
+        "check_out_date": "2024-12-15",
+        "payments": [
+          {
+            "id": 12,
+            "payment_number": "PAY-20260314-0002",
+            "amount": 150.00,
+            "payment_method_id": 2,
+            "payment_date": "2024-12-10T10:00:00.000Z",
+            "status": "completed",
+            "paymentMethod": {
+              "id": 2,
+              "name": "Efectivo",
+              "type": "cash"
+            }
+          }
+        ]
       },
       "guest": {
         "id": 5,
@@ -5330,13 +5278,92 @@ GET /api/facturas/traer-todos?page=1&limit=10&status=pending&from_date=2024-12-0
           "id": 15,
           "sale_number": "SALE-2024-015",
           "total_amount": "53.10",
-          "payment_status": "paid"
+          "payment_status": "paid",
+          "payments": [
+            {
+              "id": 13,
+              "payment_number": "PAY-20260314-0003",
+              "amount": 53.10,
+              "payment_method_id": 1,
+              "payment_date": "2024-12-12T14:00:00.000Z",
+              "status": "completed",
+              "paymentMethod": {
+                "id": 1,
+                "name": "Tarjeta de Crédito",
+                "type": "card"
+              }
+            }
+          ]
         },
         {
           "id": 18,
           "sale_number": "SALE-2024-018",
           "total_amount": "27.50",
-          "payment_status": "paid"
+          "payment_status": "paid",
+          "payments": []
+        }
+      ],
+      "payments": [
+        {
+          "id": 11,
+          "payment_number": "PAY-20260314-0001",
+          "amount": 590.00,
+          "payment_method_id": 1,
+          "payment_date": "2024-12-15T14:30:00.000Z",
+          "status": "completed",
+          "paymentMethod": {
+            "id": 1,
+            "name": "Tarjeta de Crédito",
+            "type": "card"
+          }
+        }
+      ],
+      "all_related_payments": [
+        {
+          "id": 11,
+          "payment_number": "PAY-20260314-0001",
+          "amount": 590.00,
+          "payment_method_id": 1,
+          "payment_date": "2024-12-15T14:30:00.000Z",
+          "status": "completed",
+          "relation_type": "direct_invoice",
+          "paymentMethod": {
+            "id": 1,
+            "name": "Tarjeta de Crédito",
+            "type": "card"
+          }
+        },
+        {
+          "id": 12,
+          "payment_number": "PAY-20260314-0002",
+          "amount": 150.00,
+          "payment_method_id": 2,
+          "payment_date": "2024-12-10T10:00:00.000Z",
+          "status": "completed",
+          "relation_type": "reservation",
+          "paymentMethod": {
+            "id": 2,
+            "name": "Efectivo",
+            "type": "cash"
+          }
+        },
+        {
+          "id": 13,
+          "payment_number": "PAY-20260314-0003",
+          "amount": 53.10,
+          "payment_method_id": 1,
+          "payment_date": "2024-12-12T14:00:00.000Z",
+          "status": "completed",
+          "relation_type": "sale",
+          "sale": {
+            "id": 15,
+            "sale_number": "SALE-2024-015"
+          },
+          "paymentMethod": {
+            "id": 1,
+            "name": "Tarjeta de Crédito",
+            "type": "card"
+          }
         }
       ]
     }
@@ -5384,7 +5411,25 @@ GET /api/facturas/traer-todos?page=1&limit=10&status=pending&from_date=2024-12-0
       "id": 10,
       "confirmation_code": "RES-2024-010",
       "check_in_date": "2024-12-10",
-      "check_out_date": "2024-12-15"
+      "check_out_date": "2024-12-15",
+      "payments": [
+        {
+          "id": 12,
+          "payment_number": "PAY-20260314-0002",
+          "amount": 150.00,
+          "payment_method_id": 2,
+          "payment_date": "2024-12-10T10:00:00.000Z",
+          "status": "completed",
+          "transaction_id": null,
+          "authorization_code": null,
+          "notes": "Pago adelantado de reserva",
+          "paymentMethod": {
+            "id": 2,
+            "name": "Efectivo",
+            "type": "cash"
+          }
+        }
+      ]
     },
     "guest": {
       "id": 5,
@@ -5457,10 +5502,113 @@ GET /api/facturas/traer-todos?page=1&limit=10&status=pending&from_date=2024-12-0
           }
         ]
       }
+    ],
+    "payments": [
+      {
+        "id": 11,
+        "payment_number": "PAY-20260314-0001",
+        "amount": 590.00,
+        "payment_method_id": 1,
+        "payment_date": "2024-12-15T14:30:00.000Z",
+        "status": "completed",
+        "transaction_id": "txn_1234567890",
+        "authorization_code": "AUTH123456",
+        "notes": "Pago completo de la factura",
+        "paymentMethod": {
+          "id": 1,
+          "name": "Tarjeta de Crédito",
+          "type": "card"
+        }
+      }
+    ],
+    "all_related_payments": [
+      {
+        "id": 11,
+        "payment_number": "PAY-20260314-0001",
+        "amount": 590.00,
+        "payment_method_id": 1,
+        "payment_date": "2024-12-15T14:30:00.000Z",
+        "status": "completed",
+        "transaction_id": "txn_1234567890",
+        "authorization_code": "AUTH123456",
+        "notes": "Pago completo de la factura",
+        "relation_type": "direct_invoice",
+        "paymentMethod": {
+          "id": 1,
+          "name": "Tarjeta de Crédito",
+          "type": "card"
+        }
+      },
+      {
+        "id": 12,
+        "payment_number": "PAY-20260314-0002",
+        "amount": 150.00,
+        "payment_method_id": 2,
+        "payment_date": "2024-12-10T10:00:00.000Z",
+        "status": "completed",
+        "transaction_id": null,
+        "authorization_code": null,
+        "notes": "Pago adelantado de reserva",
+        "relation_type": "reservation",
+        "paymentMethod": {
+          "id": 2,
+          "name": "Efectivo",
+          "type": "cash"
+        }
+      },
+      {
+        "id": 13,
+        "payment_number": "PAY-20260314-0003",
+        "amount": 50.00,
+        "payment_method_id": 1,
+        "payment_date": "2024-12-12T14:00:00.000Z",
+        "status": "completed",
+        "transaction_id": "txn_9876543210",
+        "authorization_code": "AUTH789012",
+        "notes": "Pago de venta de productos",
+        "relation_type": "sale",
+        "sale": {
+          "id": 15,
+          "sale_number": "SALE-2024-015"
+        },
+        "paymentMethod": {
+          "id": 1,
+          "name": "Tarjeta de Crédito",
+          "type": "card"
+        }
+      }
     ]
   }
 }
 ```
+
+**Nota sobre Estructura de Datos:**
+
+**Relaciones:**
+- `Invoice → Reservation → Sales`: Las ventas (sales) están relacionadas con la factura a través de la reserva en la base de datos
+- **Nota**: En la respuesta de la API, `sales` se presenta al mismo nivel que `reservation`, `guest`, `payments` para facilitar el acceso a los datos
+- `sales[]`: Array de ventas asociadas a la reserva de la factura (extraído de `reservation.sales`)
+- `reservation.payments[]`: Pagos asociados a la reserva (sin `invoice_id`)
+- `sales[].payments[]`: Pagos asociados a cada venta (sin `invoice_id`)
+- `payments[]`: Pagos directamente asociados a la factura (con `invoice_id`)
+
+**Array `payments` (Pagos Directos):**
+- Contiene pagos asociados directamente a la factura mediante el campo `invoice_id`
+- Estos son los pagos que se registraron específicamente para esta factura
+
+**Array `all_related_payments` (Todos los Pagos Relacionados):**
+- Incluye **todos** los pagos relacionados con la factura, tanto directos como indirectos
+- Cada pago tiene un campo `relation_type` que indica cómo está relacionado:
+  - `"direct_invoice"`: Pago asociado directamente a la factura (`invoice_id`)
+  - `"reservation"`: Pago asociado a la reserva de la factura (`reservation_id`)
+  - `"sale"`: Pago asociado a una venta incluida en la factura (`sale_id`)
+- Los pagos de tipo `"sale"` incluyen información adicional de la venta asociada
+- Este array permite ver el historial completo de pagos relacionados con la factura, útil para:
+  - Rastrear pagos adelantados de la reserva
+  - Ver pagos de ventas individuales que forman parte de la factura
+  - Calcular el total pagado considerando todos los conceptos
+- **Importante**: Los pagos sin `invoice_id` solo aparecen en `all_related_payments`, no en `payments`
+- **Disponible en ambos endpoints**: Tanto en `GET /traer-todos` como en `GET /traer-por-id/:id`
 
 ---
 
@@ -5697,6 +5845,7 @@ Base URL: `/api/pagos`
 - `status` (opcional): Filtrar por estado (pending, completed, failed, refunded)
 - `reservation_id` (opcional): Filtrar por ID de reserva
 - `sale_id` (opcional): Filtrar por ID de venta
+- `invoice_id` (opcional): Filtrar por ID de factura
 - `payment_method_id` (opcional): Filtrar por ID de método de pago
 - `from_date` (opcional): Filtrar desde fecha (ISO 8601)
 - `to_date` (opcional): Filtrar hasta fecha (ISO 8601)
@@ -5716,6 +5865,7 @@ GET /api/pagos/traer-todos?page=1&limit=10&status=completed&from_date=2024-12-01
       "payment_number": "PAY-2024-001",
       "reservation_id": 10,
       "sale_id": null,
+      "invoice_id": 5,
       "amount": 590.00,
       "payment_method_id": 1,
       "payment_date": "2024-12-15T14:30:00.000Z",
@@ -5733,6 +5883,13 @@ GET /api/pagos/traer-todos?page=1&limit=10&status=completed&from_date=2024-12-01
         "check_out_date": "2024-12-15"
       },
       "sale": null,
+      "invoice": {
+        "id": 5,
+        "invoice_number": "INV-2024-005",
+        "total_amount": 590.00,
+        "status": "paid",
+        "issue_date": "2024-12-15T10:00:00.000Z"
+      },
       "payment_method": {
         "id": 1,
         "name": "Tarjeta de Crédito",
@@ -5768,6 +5925,7 @@ GET /api/pagos/traer-todos?page=1&limit=10&status=completed&from_date=2024-12-01
     "payment_number": "PAY-2024-001",
     "reservation_id": 10,
     "sale_id": null,
+    "invoice_id": 5,
     "amount": 590.00,
     "payment_method_id": 1,
     "payment_date": "2024-12-15T14:30:00.000Z",
@@ -5785,6 +5943,13 @@ GET /api/pagos/traer-todos?page=1&limit=10&status=completed&from_date=2024-12-01
       "check_out_date": "2024-12-15"
     },
     "sale": null,
+    "invoice": {
+      "id": 5,
+      "invoice_number": "INV-2024-005",
+      "total_amount": 590.00,
+      "status": "paid",
+      "issue_date": "2024-12-15T10:00:00.000Z"
+    },
     "payment_method": {
       "id": 1,
       "name": "Tarjeta de Crédito",
@@ -5812,32 +5977,40 @@ GET /api/pagos/traer-todos?page=1&limit=10&status=completed&from_date=2024-12-01
 **Body:**
 ```json
 {
-  "payment_number": "PAY-2024-001",
   "reservation_id": 10,
   "sale_id": null,
+  "invoice_id": 5,
   "amount": 590.00,
   "payment_method_id": 1,
   "payment_date": "2024-12-15T14:30:00",
   "status": "completed",
   "card_last_four": "4242",
-  "transaction_id": "txn_1234567890",
-  "authorization_code": "AUTH123456",
   "notes": "Pago completo de la reserva"
 }
 ```
 
 **Validaciones:**
-- `payment_number`: Requerido, máximo 50 caracteres, único
 - `reservation_id`: Opcional, integer, debe existir en `reservations`
 - `sale_id`: Opcional, integer, debe existir en `sales`
+- `invoice_id`: Opcional, integer, debe existir en `invoices` (recomendado para asociar el pago a una factura)
 - `amount`: Requerido, decimal > 0
 - `payment_method_id`: Opcional, integer, debe existir en `payment_methods`
 - `payment_date`: Opcional, fecha ISO 8601 (default: fecha actual)
 - `status`: Opcional, valores permitidos: `'pending'`, `'completed'`, `'failed'`, `'refunded'` (default: `'completed'`)
-- `card_last_four`: Opcional, exactamente 4 caracteres
-- `transaction_id`: Opcional, máximo 255 caracteres
-- `authorization_code`: Opcional, máximo 100 caracteres
+- `card_last_four`: Opcional, exactamente 4 caracteres (solo para referencia, no se procesa)
 - `notes`: Opcional, texto
+
+**Notas Importantes:**
+- El `payment_number` se genera **automáticamente** con el formato `PAY-YYYYMMDD-NNNN` (ej: `PAY-20260314-0001`)
+  - No es necesario enviarlo en el request
+  - El sistema asigna un número secuencial único por día
+- Los campos `transaction_id` y `authorization_code` se generan **automáticamente** por el backend
+  - Actualmente se guardan como `null` (preparado para futura integración con pasarelas de pago)
+  - NO deben enviarse desde el frontend
+  - En el futuro, estos campos se llenarán automáticamente al integrar Stripe, PayPal, etc.
+- Un pago puede estar asociado a una **reserva** (`reservation_id`), una **venta** (`sale_id`) o una **factura** (`invoice_id`)
+- Lo más común es que un pago esté asociado a una factura, ya que las facturas son el documento formal que registra el monto a pagar
+- Se recomienda siempre proporcionar `invoice_id` cuando el pago corresponde a una factura emitida
 
 **Respuesta Exitosa (201):**
 ```json
@@ -5845,7 +6018,7 @@ GET /api/pagos/traer-todos?page=1&limit=10&status=completed&from_date=2024-12-01
   "ok": true,
   "payment": {
     "id": 1,
-    "payment_number": "PAY-2024-001",
+    "payment_number": "PAY-20260314-0001",
     "reservation_id": 10,
     "sale_id": null,
     "amount": 590.00,

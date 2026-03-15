@@ -1,23 +1,15 @@
 import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api/apiWrapper";
-
-export interface MetodoPago {
-  id: number;
-  name: string;
-  description?: string;
-  is_active: boolean;
-}
-
-export interface ResponseMetodosPago {
-  ok: boolean;
-  paymentMethods: MetodoPago[];
-  totalCount: number;
-  currentPage: number;
-  totalPages: number;
-}
+import type {
+  PaymentMethod,
+  PaymentMethodsResponse,
+  PaymentMethodResponse,
+  PaymentMethodMutationResponse,
+  PaymentMethodDeleteResponse,
+} from "@/types/payment-method";
 
 export const metodosPagoApi = {
   // GET /api/metodos-pago/traer-todos
-  traerTodos: async (page = 1, limit = 100, is_active?: boolean): Promise<ResponseMetodosPago> => {
+  traerTodos: async (page = 1, limit = 100, is_active?: boolean): Promise<PaymentMethodsResponse> => {
     const params = new URLSearchParams({ 
       page: page.toString(), 
       limit: limit.toString() 
@@ -25,31 +17,31 @@ export const metodosPagoApi = {
     if (is_active !== undefined) {
       params.append('is_active', is_active.toString());
     }
-    return await apiGet<ResponseMetodosPago>(`/metodos-pago/traer-todos?${params}`);
+    return await apiGet<PaymentMethodsResponse>(`/metodos-pago/traer-todos?${params}`);
   },
 
   // GET /api/metodos-pago/traer-por-id/:id
-  traerPorId: async (id: number): Promise<{ ok: boolean; metodo: MetodoPago }> => {
+  traerPorId: async (id: number): Promise<PaymentMethodResponse> => {
     return await apiGet(`/metodos-pago/traer-por-id/${id}`);
   },
 
   // POST /api/metodos-pago/crear
-  crear: async (data: Omit<MetodoPago, "id">): Promise<{ ok: boolean; metodo: MetodoPago }> => {
+  crear: async (data: Omit<PaymentMethod, "id" | "created_at">): Promise<PaymentMethodMutationResponse> => {
     return await apiPost("/metodos-pago/crear", data);
   },
 
   // PUT /api/metodos-pago/actualizar/:id
-  actualizar: async (id: number, data: Partial<MetodoPago>): Promise<{ ok: boolean; metodo: MetodoPago }> => {
+  actualizar: async (id: number, data: Partial<PaymentMethod>): Promise<PaymentMethodMutationResponse> => {
     return await apiPut(`/metodos-pago/actualizar/${id}`, data);
   },
 
   // DELETE /api/metodos-pago/eliminar/:id
-  eliminar: async (id: number): Promise<{ ok: boolean; msg: string }> => {
+  eliminar: async (id: number): Promise<PaymentMethodDeleteResponse> => {
     return await apiDelete(`/metodos-pago/eliminar/${id}`);
   },
 
   // GET /api/metodos-pago/traer-todos con filtro de activos
-  obtenerActivos: async (): Promise<ResponseMetodosPago> => {
+  obtenerActivos: async (): Promise<PaymentMethodsResponse> => {
     return await metodosPagoApi.traerTodos(1, 100, true);
   },
 };

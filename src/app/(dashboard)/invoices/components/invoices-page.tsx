@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import EmptyState from "@/components/hotel/empty-state";
 import { useInvoices } from "@/hooks/useInvoices";
+import { useActiveMetodosPago } from "@/hooks/useMetodosPago";
 import { useInvoiceOperations } from "../hooks/useInvoiceOperations";
 import InvoiceMetrics from "./invoice-metrics";
 import InvoiceFiltersCard from "./invoice-filters-card";
@@ -12,16 +13,8 @@ import InvoicePaymentDialog from "./invoice-payment-dialog";
 
 export default function InvoicesPage() {
   // Obtener datos desde hooks individuales
-  const { invoices: apiInvoices, isLoading: invoicesLoading } = useInvoices({ limit: 100 });
-
-  // TODO: Obtener métodos de pago desde API cuando esté disponible
-  const paymentMethods: any[] = [];
-
-  // Función para agregar pago (TODO: implementar con API real)
-  const handleAddPayment = async (invoiceId: number, payment: any) => {
-    // TODO: Llamar a facturasApi para registrar pago
-    console.log("Add payment:", invoiceId, payment);
-  };
+  const { invoices: apiInvoices, isLoading: invoicesLoading, refreshInvoices } = useInvoices({ limit: 100 });
+  const { paymentMethods, isLoading: paymentMethodsLoading } = useActiveMetodosPago();
 
   // Hook de operaciones de facturas
   const {
@@ -39,21 +32,22 @@ export default function InvoicesPage() {
     totalBilled,
     totalPending,
     totalOverdue,
+    calculateBalance,
     handleOpenPayment,
     handleClosePayment,
     handlePaymentSubmit,
   } = useInvoiceOperations({
     invoices: apiInvoices,
     paymentMethods,
-    onAddPayment: handleAddPayment,
+    refreshInvoices,
   });
 
-  if (invoicesLoading) {
+  if (invoicesLoading || paymentMethodsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-3">
           <div className="h-8 w-8 animate-spin mx-auto border-4 border-primary border-t-transparent rounded-full" />
-          <p className="text-sm text-neutral-500">Cargando facturas...</p>
+          <p className="text-sm text-neutral-500">Cargando datos...</p>
         </div>
       </div>
     );
@@ -103,6 +97,7 @@ export default function InvoicesPage() {
                 <InvoiceTableRow
                   key={invoice.id}
                   invoice={invoice}
+                  calculateBalance={calculateBalance}
                   onOpenPayment={handleOpenPayment}
                 />
               ))}

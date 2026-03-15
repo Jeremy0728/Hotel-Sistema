@@ -1,36 +1,25 @@
 import { useState, useMemo } from 'react';
+import { toast } from 'react-hot-toast';
+import { pagosApi } from '@/apis/pagos.api';
+import type { Invoice, PaymentMethod } from '@/types/invoice';
 
-interface Invoice {
-  id: number;
-  invoice_number: string;
-  reservation_id?: number;
-  guest_id?: number;
-  issue_date: string;
-  due_date: string;
-  status: string;
-  subtotal: string;
-  tax: string;
-  total: string;
-  paid_amount: string;
-  balance: string;
-}
-
-interface PaymentMethod {
-  id: number;
-  name: string;
-  is_active: boolean;
+interface PaymentFormData {
+  amount: number;
+  methodId?: string;
+  date?: string;
+  reference?: string;
+  notes?: string;
 }
 
 interface UseInvoiceOperationsProps {
   invoices: Invoice[];
   paymentMethods: PaymentMethod[];
-  onAddPayment?: (invoiceId: number, payment: any) => Promise<void>;
+  refreshInvoices: () => void;
 }
 
 export function useInvoiceOperations({
   invoices,
-  paymentMethods,
-  onAddPayment,
+  refreshInvoices,
 }: UseInvoiceOperationsProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -39,14 +28,28 @@ export function useInvoiceOperations({
   const [activeInvoice, setActiveInvoice] = useState<Invoice | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
 
+  // Calcular balance de una factura
+  const calculateBalance = (invoice: Invoice) => {
+    const total = typeof invoice.total_amount === 'string' ? parseFloat(invoice.total_amount) : invoice.total_amount;
+    // Calcular el monto pagado a partir de all_related_payments con status 'completed'
+    const paid = invoice.all_related_payments?.reduce((sum, payment) => {
+      const amount = typeof payment.amount === 'string' ? parseFloat(payment.amount) : payment.amount;
+      return sum + (payment.status === 'completed' ? amount : 0);
+    }, 0) || 0;
+    return total - paid;
+  };
+
   // Filtrar facturas
   const filteredInvoices = useMemo(() => {
     const query = search.toLowerCase();
     return invoices.filter((invoice) => {
+      const guestName = invoice.guest ? `${invoice.guest.nombres} ${invoice.guest.apellido_paterno}`.toLowerCase() : '';
+      const corporateName = invoice.corporateClient?.company_name?.toLowerCase() || '';
       const matchesSearch =
         (invoice.invoice_number || '').toLowerCase().includes(query) ||
-        String(invoice.guest_id || '').toLowerCase().includes(query) ||
-        String(invoice.reservation_id || '').toLowerCase().includes(query);
+        guestName.includes(query) ||
+        corporateName.includes(query) ||
+        (invoice.reservation?.confirmation_code || '').toLowerCase().includes(query);
       const matchesStatus = statusFilter === 'all' ? true : invoice.status === statusFilter;
       const matchesFrom = dateFrom ? (invoice.issue_date || '') >= dateFrom : true;
       const matchesTo = dateTo ? (invoice.issue_date || '') <= dateTo : true;
@@ -56,17 +59,21 @@ export function useInvoiceOperations({
 
   // Métricas
   const totalBilled = useMemo(() => {
-    return invoices.reduce((sum, invoice) => sum + parseFloat(invoice.total), 0);
+    return invoices.reduce((sum, invoice) => {
+      const amount = typeof invoice.total_amount === 'string' ? parseFloat(invoice.total_amount) : invoice.total_amount;
+      return sum + amount;
+    }, 0);
   }, [invoices]);
 
   const totalPending = useMemo(() => {
-    return invoices.reduce((sum, invoice) => sum + parseFloat(invoice.balance), 0);
+    return invoices.reduce((sum, invoice) => sum + calculateBalance(invoice), 0);
   }, [invoices]);
 
+  // lógica para facturas vencidas cuando se agregue el campo due_date
   const totalOverdue = useMemo(() => {
     return invoices
       .filter((invoice) => invoice.status === 'overdue')
-      .reduce((sum, invoice) => sum + parseFloat(invoice.balance), 0);
+      .reduce((sum, invoice) => sum + calculateBalance(invoice), 0);
   }, [invoices]);
 
   const handleOpenPayment = (invoice: Invoice) => {
@@ -79,10 +86,31 @@ export function useInvoiceOperations({
     setActiveInvoice(null);
   };
 
-  const handlePaymentSubmit = async (values: any) => {
-    if (!activeInvoice || !onAddPayment) return;
-    await onAddPayment(activeInvoice.id, values);
+  const handlePaymentSubmit = async (values: PaymentFormData) => {
+    if (!activeInvoice) return;
+    await handleAddPayment(activeInvoice.id, values);
     handleClosePayment();
+  };
+
+  // Función para agregar pago a una factura
+  const handleAddPayment = async (invoiceId: number, paymentData: PaymentFormData) => {
+    try {
+      await pagosApi.crear({
+        invoice_id: invoiceId,
+        amount: paymentData.amount,
+        payment_method_id: paymentData.methodId ? parseInt(paymentData.methodId) : undefined,
+        payment_date: paymentData.date || new Date().toISOString(),
+        status: 'completed',
+        transaction_id: paymentData.reference || undefined,
+        notes: paymentData.notes || undefined,
+      });
+      toast.success('Pago registrado exitosamente');
+      refreshInvoices();
+    } catch (error) {
+      console.error('Error al registrar pago:', error);
+      toast.error('Error al registrar pago');
+      throw error;
+    }
   };
 
   return {
@@ -100,8 +128,10 @@ export function useInvoiceOperations({
     totalBilled,
     totalPending,
     totalOverdue,
+    calculateBalance,
     handleOpenPayment,
     handleClosePayment,
     handlePaymentSubmit,
+    handleAddPayment,
   };
 }

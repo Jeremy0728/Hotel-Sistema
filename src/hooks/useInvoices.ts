@@ -1,64 +1,15 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import useSWR from 'swr';
-import { ApiError } from '@/types/api';
-
-// TODO: Crear API de facturas cuando esté disponible
-// import { facturasApi } from '@/apis/facturas.api';
-
-interface Invoice {
-  id: string;
-  number: string;
-  date: string;
-  clientName: string;
-  clientType: "guest" | "corporate";
-  reservationCode?: string;
-  status: "draft" | "sent" | "paid" | "overdue" | "cancelled";
-  items: Array<{
-    id: string;
-    description: string;
-    quantity: number;
-    unitPrice: number;
-    total: number;
-  }>;
-  subtotal: number;
-  tax: number;
-  total: number;
-  balance: number;
-  payments: Array<{
-    id: string;
-    amount: number;
-    methodId: string;
-    methodName: string;
-    reference?: string;
-    date: string;
-    notes?: string;
-  }>;
-  notes?: string;
-}
-
-interface UseInvoicesOptions {
-  page?: number;
-  limit?: number;
-  status?: string;
-  clientName?: string;
-  refreshInterval?: number;
-}
-
-interface UseInvoicesReturn {
-  invoices: Invoice[];
-  total: number;
-  page: number;
-  totalPages: number;
-  isLoading: boolean;
-  isError: boolean;
-  error: ApiError | undefined;
-  mutate: () => void;
-  refreshInvoices: () => void;
-}
+import { facturasApi } from '@/apis/facturas.api';
+import type { 
+  UseInvoicesOptions,
+  UseInvoicesReturn,
+  UseInvoiceByIdOptions,
+  UseInvoiceByIdReturn
+} from '@/types/invoice';
 
 /**
  * Custom hook para obtener y gestionar facturas
- * NOTA: Por ahora retorna datos mock hasta que la API esté disponible
  */
 export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesReturn {
   const {
@@ -66,112 +17,43 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesReturn
     limit = 100,
     status,
     clientName,
+    fromDate,
+    toDate,
     refreshInterval,
   } = options;
 
-  const swrKey = ['invoices', page, limit, status, clientName]
-    .filter(Boolean)
-    .join('-');
-
-  // Fetcher temporal con datos mock
-  const fetcher = async () => {
-    // TODO: Reemplazar con llamada real a la API
-    // const response = await facturasApi.traerTodos(page, limit, { status, clientName });
-    
-    // Datos mock temporales
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const today = new Date().toISOString().split('T')[0];
-    const mockInvoices: Invoice[] = [
-      {
-        id: "inv-1",
-        number: "F-1001",
-        date: today,
-        clientName: "Carla Mendoza",
-        clientType: "guest",
-        reservationCode: "RSV-240101",
-        status: "paid",
-        items: [
-          {
-            id: "item-1",
-            description: "Hospedaje 2 noches",
-            quantity: 2,
-            unitPrice: 260,
-            total: 520,
-          },
-          {
-            id: "item-2",
-            description: "Consumo minibar",
-            quantity: 1,
-            unitPrice: 60,
-            total: 60,
-          },
-        ],
-        subtotal: 580,
-        tax: 104.4,
-        total: 684.4,
-        balance: 0,
-        payments: [
-          {
-            id: "pay-1",
-            amount: 684.4,
-            methodId: "pm-2",
-            methodName: "Tarjeta",
-            date: today,
-          },
-        ],
-      },
-      {
-        id: "inv-2",
-        number: "F-1002",
-        date: today,
-        clientName: "Luis Garcia",
-        clientType: "guest",
-        reservationCode: "RSV-240102",
-        status: "sent",
-        items: [
-          {
-            id: "item-3",
-            description: "Hospedaje 1 noche",
-            quantity: 1,
-            unitPrice: 320,
-            total: 320,
-          },
-        ],
-        subtotal: 320,
-        tax: 57.6,
-        total: 377.6,
-        balance: 377.6,
-        payments: [],
-      },
+  // Construir la key para SWR con los parámetros usando useMemo
+  const key = useMemo(() => {
+    return [
+      'invoices',
+      page,
+      limit,
+      status,
+      clientName,
+      fromDate,
+      toDate,
     ];
+  }, [page, limit, status, clientName, fromDate, toDate]);
 
-    return {
-      ok: true,
-      facturas: mockInvoices,
-      total: mockInvoices.length,
-      page: 1,
-      totalPages: 1,
-    };
+  // Fetcher function que llama a la API
+  const fetcher = async () => {
+    const response = await facturasApi.traerTodos(page, limit, {
+      status,
+      client_name: clientName,
+      from_date: fromDate,
+      to_date: toDate,
+    });
+    return response;
   };
 
-  const { data, error, isLoading, mutate } = useSWR<
-    {
-      ok: boolean;
-      facturas: Invoice[];
-      total: number;
-      page: number;
-      totalPages: number;
-    },
-    ApiError
-  >(
-    swrKey,
+  const { data, error, isLoading, mutate } = useSWR(
+    key,
     fetcher,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       refreshInterval: refreshInterval,
-      shouldRetryOnError: false,
+      shouldRetryOnError: true,
       dedupingInterval: 2000,
     }
   );
@@ -181,9 +63,9 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesReturn
   }, [mutate]);
 
   return {
-    invoices: data?.facturas || [],
-    total: data?.total || 0,
-    page: data?.page || 1,
+    invoices: data?.invoices || [],
+    total: data?.totalCount || 0,
+    page: data?.currentPage || 1,
     totalPages: data?.totalPages || 1,
     isLoading,
     isError: !!error,
@@ -198,4 +80,42 @@ export function useInvoices(options: UseInvoicesOptions = {}): UseInvoicesReturn
  */
 export function usePendingInvoices() {
   return useInvoices({ status: 'sent', limit: 100 });
+}
+
+/**
+ * Hook para obtener una factura específica por ID
+ */
+export function useInvoiceById(options: UseInvoiceByIdOptions): UseInvoiceByIdReturn {
+  const { invoiceId, refreshInterval } = options;
+
+  // Fetcher function que llama a la API
+  const fetcher = async () => {
+    const response = await facturasApi.traerPorId(invoiceId);
+    return response.invoice;
+  };
+
+  const { data, error, isLoading, mutate } = useSWR(
+    invoiceId ? ['invoice', invoiceId] : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      refreshInterval: refreshInterval,
+      shouldRetryOnError: true,
+      dedupingInterval: 2000,
+    }
+  );
+
+  const refreshInvoice = useCallback(() => {
+    mutate();
+  }, [mutate]);
+
+  return {
+    invoice: data || null,
+    isLoading,
+    isError: !!error,
+    error,
+    mutate,
+    refreshInvoice,
+  };
 }

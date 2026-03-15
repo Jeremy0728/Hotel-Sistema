@@ -14,18 +14,11 @@ import PaymentMethodTableRow from "./payment-method-table-row";
 
 export default function PaymentMethodsPage() {
   // Obtener datos desde hooks individuales
-  const { paymentMethods: apiPaymentMethods, isLoading: methodsLoading } = usePaymentMethods({ limit: 100 });
-
-  // Funciones para operaciones CRUD (TODO: implementar con APIs reales)
-  const handleAddMethod = async (method: any) => {
-    // TODO: Llamar a metodosPagoApi.crear
-    console.log("Add method:", method);
-  };
-
-  const handleUpdateMethod = async (id: number, updates: any) => {
-    // TODO: Llamar a metodosPagoApi.actualizar
-    console.log("Update method:", id, updates);
-  };
+  const { 
+    paymentMethods: apiPaymentMethods, 
+    isLoading: methodsLoading,
+    refreshPaymentMethods 
+  } = usePaymentMethods({ limit: 100 });
 
   // Hook de operaciones de métodos de pago
   const {
@@ -42,8 +35,7 @@ export default function PaymentMethodsPage() {
     handleSubmit,
   } = usePaymentMethodOperations({
     paymentMethods: apiPaymentMethods,
-    onAddMethod: handleAddMethod,
-    onUpdateMethod: handleUpdateMethod,
+    refreshPaymentMethods,
   });
 
   if (methodsLoading) {
@@ -60,7 +52,7 @@ export default function PaymentMethodsPage() {
   const defaultValues: PaymentMethodValues = editingMethod
     ? {
         name: editingMethod.name,
-        type: "cash",
+        type: editingMethod.type,
         status: editingMethod.is_active ? "active" : "inactive",
       }
     : {

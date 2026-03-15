@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { Invoice, PaymentMethod } from "@/types/hotel";
+import type { Invoice, PaymentMethod } from "@/types/invoice";
 import type { InvoicePaymentValues } from "@/lib/hotel-schemas";
 
 interface InvoicePaymentDialogProps {
@@ -30,27 +30,49 @@ export default function InvoicePaymentDialog({
   paymentMethods,
   onSubmit,
 }: InvoicePaymentDialogProps) {
-  const todayStr = new Date().toISOString().split("T")[0];
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState<InvoicePaymentValues>({
-    amount: 0,
-    methodId: "",
-    reference: "",
-    date: todayStr,
-    notes: "",
-  });
+  
+  // Calcular balance de la factura
+  const invoiceBalance = useMemo(() => {
+    if (!invoice) return 0;
+    const total = typeof invoice.total_amount === 'string' ? parseFloat(invoice.total_amount) : invoice.total_amount;
+    // Calcular el monto pagado a partir de all_related_payments con status 'completed'
+    const paid = invoice.all_related_payments?.reduce((sum, payment) => {
+      const amount = typeof payment.amount === 'string' ? parseFloat(payment.amount) : payment.amount;
+      return sum + (payment.status === 'completed' ? amount : 0);
+    }, 0) || 0;
+    return total - paid;
+  }, [invoice]);
 
-  useEffect(() => {
-    if (!invoice) return;
-    setForm({
-      amount: invoice.balance,
-      methodId: paymentMethods[0]?.id ?? "",
+  // Valores iniciales calculados en el cliente para evitar mismatch SSR
+  const initialFormValues = useMemo(() => {
+    // Solo ejecutar en el cliente
+    if (typeof window === 'undefined') {
+      return {
+        amount: 0,
+        methodId: "",
+        reference: "",
+        date: "",
+        notes: "",
+      };
+    }
+    
+    const todayStr = new Date().toISOString().split("T")[0];
+    return {
+      amount: invoiceBalance,
+      methodId: paymentMethods[0]?.id.toString() ?? "",
       reference: "",
       date: todayStr,
       notes: "",
-    });
-    setError(null);
-  }, [invoice, paymentMethods, todayStr, open]);
+    };
+  }, [invoiceBalance, paymentMethods]);
+
+  const [form, setForm] = useState<InvoicePaymentValues>(initialFormValues);
+
+  // Actualizar formulario cuando cambien los valores iniciales
+  useEffect(() => {
+    setForm(initialFormValues);
+  }, [initialFormValues]);
 
   const handleSubmit = () => {
     if (!invoice) return;
@@ -62,7 +84,7 @@ export default function InvoicePaymentDialog({
       setError("El monto debe ser mayor a 0.");
       return;
     }
-    if (form.amount > invoice.balance) {
+    if (form.amount > invoiceBalance) {
       setError("El monto no puede superar el balance pendiente.");
       return;
     }
@@ -81,7 +103,7 @@ export default function InvoicePaymentDialog({
         {invoice ? (
           <div className="space-y-4">
             <div className="text-sm text-neutral-500 dark:text-neutral-300">
-              Factura {invoice.number} · Balance pendiente: S/ {invoice.balance}
+              Factura {invoice.invoice_number} · Balance pendiente: S/ {invoiceBalance.toFixed(2)}
             </div>
             <Input
               type="number"
@@ -102,9 +124,9 @@ export default function InvoicePaymentDialog({
               </SelectTrigger>
               <SelectContent>
                 {paymentMethods
-                  .filter((method) => method.status === "active")
+                  .filter((method) => method.is_active)
                   .map((method) => (
-                    <SelectItem key={method.id} value={method.id}>
+                    <SelectItem key={method.id} value={method.id.toString()}>
                       {method.name}
                     </SelectItem>
                   ))}

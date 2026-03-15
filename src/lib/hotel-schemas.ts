@@ -138,7 +138,7 @@ export type HotelSettingsValues = z.infer<typeof hotelSettingsSchema>;
 
 export const paymentMethodSchema = z.object({
   name: z.string().min(1, "Nombre requerido"),
-  type: z.string().min(1, "Tipo requerido"),
+  type: z.enum(["credit_card", "debit_card", "cash", "bank_transfer", "check", "other"]),
   status: z.enum(["active", "inactive"]),
 });
 

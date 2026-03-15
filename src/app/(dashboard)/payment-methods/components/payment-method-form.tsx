@@ -37,8 +37,10 @@ const statusOptions = [
 
 const typeOptions = [
   { value: "cash", label: "Efectivo" },
-  { value: "card", label: "Tarjeta" },
-  { value: "transfer", label: "Transferencia" },
+  { value: "credit_card", label: "Tarjeta de Crédito" },
+  { value: "debit_card", label: "Tarjeta de Débito" },
+  { value: "bank_transfer", label: "Transferencia Bancaria" },
+  { value: "check", label: "Cheque" },
   { value: "other", label: "Otro" },
 ];
 

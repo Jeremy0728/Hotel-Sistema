@@ -1,6 +1,10 @@
 import { useCallback } from 'react';
 import useSWR from 'swr';
-import { metodosPagoApi, type MetodoPago, type ResponseMetodosPago } from '@/apis/metodos-pago.api';
+import { metodosPagoApi } from '@/apis/metodos-pago.api';
+import type {
+  PaymentMethod,
+  PaymentMethodsResponse,
+} from '@/types/payment-method';
 import { ApiError } from '@/types/api';
 
 interface UseMetodosPagoOptions {
@@ -11,7 +15,7 @@ interface UseMetodosPagoOptions {
 }
 
 interface UseMetodosPagoReturn {
-  paymentMethods: MetodoPago[];
+  paymentMethods: PaymentMethod[];
   totalCount: number;
   currentPage: number;
   totalPages: number;
@@ -46,7 +50,7 @@ export function useMetodosPago(options: UseMetodosPagoOptions = {}): UseMetodosP
 
   // Usar SWR para obtener los datos
   const { data, error, isLoading, mutate } = useSWR<
-    ResponseMetodosPago,
+    PaymentMethodsResponse,
     ApiError
   >(
     swrKey,

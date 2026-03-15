@@ -182,14 +182,14 @@ export default function HotelDashboard() {
 
       const reservationCodes = new Set(roomReservations.map((reservation) => reservation.code));
       const reservationGuests = new Set(
-        roomReservations.map((reservation) => reservation.guestName.toLowerCase())
+        roomReservations.map((reservation) => reservation.guestName?.toLowerCase())
       );
 
       const pendingInvoice = invoices.find((invoice) => {
         const matchCode = invoice.reservationCode
           ? reservationCodes.has(invoice.reservationCode)
           : false;
-        const matchGuest = reservationGuests.has(invoice.clientName.toLowerCase());
+        const matchGuest = reservationGuests.has(invoice.clientName?.toLowerCase());
         return (
           (matchCode || matchGuest) &&
           invoice.balance > 0 &&

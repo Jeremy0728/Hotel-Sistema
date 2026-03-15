@@ -1,22 +1,22 @@
 import { useState, useMemo } from 'react';
+import { toast } from 'react-hot-toast';
+import { metodosPagoApi } from '@/apis/metodos-pago.api';
+import type { PaymentMethod, PaymentMethodType } from '@/types/payment-method';
 
-interface PaymentMethod {
-  id: number;
+interface PaymentMethodFormValues {
   name: string;
-  description?: string;
-  is_active: boolean;
+  type: PaymentMethodType;
+  status: 'active' | 'inactive';
 }
 
 interface UsePaymentMethodOperationsProps {
   paymentMethods: PaymentMethod[];
-  onAddMethod?: (method: any) => Promise<void>;
-  onUpdateMethod?: (id: number, updates: any) => Promise<void>;
+  refreshPaymentMethods: () => void;
 }
 
 export function usePaymentMethodOperations({
   paymentMethods,
-  onAddMethod,
-  onUpdateMethod,
+  refreshPaymentMethods,
 }: UsePaymentMethodOperationsProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -53,11 +53,43 @@ export function usePaymentMethodOperations({
     setEditingMethod(null);
   };
 
-  const handleSubmit = async (values: any) => {
-    if (editingMethod && onUpdateMethod) {
-      await onUpdateMethod(editingMethod.id, values);
-    } else if (onAddMethod) {
-      await onAddMethod(values);
+  const handleAddMethod = async (values: PaymentMethodFormValues) => {
+    try {
+      await metodosPagoApi.crear({
+        name: values.name,
+        type: values.type,
+        is_active: values.status === 'active',
+      });
+      toast.success('Método de pago creado exitosamente');
+      refreshPaymentMethods();
+    } catch (error) {
+      console.error('Error al crear método de pago:', error);
+      toast.error('Error al crear método de pago');
+      throw error;
+    }
+  };
+
+  const handleUpdateMethod = async (id: number, values: PaymentMethodFormValues) => {
+    try {
+      await metodosPagoApi.actualizar(id, {
+        name: values.name,
+        type: values.type,
+        is_active: values.status === 'active',
+      });
+      toast.success('Método de pago actualizado exitosamente');
+      refreshPaymentMethods();
+    } catch (error) {
+      console.error('Error al actualizar método de pago:', error);
+      toast.error('Error al actualizar método de pago');
+      throw error;
+    }
+  };
+
+  const handleSubmit = async (values: PaymentMethodFormValues) => {
+    if (editingMethod) {
+      await handleUpdateMethod(editingMethod.id, values);
+    } else {
+      await handleAddMethod(values);
     }
     handleCloseDialog();
   };

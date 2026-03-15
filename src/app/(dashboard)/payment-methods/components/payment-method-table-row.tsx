@@ -2,13 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-
-interface PaymentMethod {
-  id: number;
-  name: string;
-  description?: string;
-  is_active: boolean;
-}
+import type { PaymentMethod } from "@/types/payment-method";
 
 interface PaymentMethodTableRowProps {
   method: PaymentMethod;

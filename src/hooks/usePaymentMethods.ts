@@ -1,31 +1,22 @@
 import useSWR from 'swr';
 import { metodosPagoApi } from '@/apis/metodos-pago.api';
+import type {
+  UsePaymentMethodsOptions,
+  UsePaymentMethodsReturn,
+  UsePaymentMethodReturn,
+} from '@/types/payment-method';
 
-export interface PaymentMethod {
-  id: number;
-  name: string;
-  description?: string;
-  is_active: boolean;
-}
+// Re-exportar PaymentMethod para compatibilidad con código existente
+export type { PaymentMethod } from '@/types/payment-method';
 
-interface UsePaymentMethodsOptions {
-  page?: number;
-  limit?: number;
-}
-
-export function usePaymentMethods(options: UsePaymentMethodsOptions = {}) {
-  const { page = 1, limit = 100 } = options;
+export function usePaymentMethods(options: UsePaymentMethodsOptions = {}): UsePaymentMethodsReturn {
+  const { page = 1, limit = 100, is_active } = options;
 
   const { data, error, isLoading, mutate } = useSWR(
-    ['payment-methods', page, limit],
+    ['payment-methods', page, limit, is_active],
     async () => {
-      const response = await metodosPagoApi.traerTodos(page, limit);
-      return {
-        paymentMethods: response.metodos || [],
-        total: response.total,
-        page: response.page,
-        totalPages: response.totalPages,
-      };
+      const response = await metodosPagoApi.traerTodos(page, limit, is_active);
+      return response;
     },
     {
       revalidateOnFocus: false,
@@ -37,8 +28,8 @@ export function usePaymentMethods(options: UsePaymentMethodsOptions = {}) {
 
   return {
     paymentMethods: data?.paymentMethods || [],
-    total: data?.total || 0,
-    page: data?.page || 1,
+    totalCount: data?.totalCount || 0,
+    currentPage: data?.currentPage || 1,
     totalPages: data?.totalPages || 1,
     isLoading,
     isError: !!error,
@@ -47,12 +38,12 @@ export function usePaymentMethods(options: UsePaymentMethodsOptions = {}) {
   };
 }
 
-export function usePaymentMethod(id: number) {
+export function usePaymentMethod(id: number): UsePaymentMethodReturn {
   const { data, error, isLoading, mutate } = useSWR(
     id ? ['payment-method', id] : null,
     async () => {
       const response = await metodosPagoApi.traerPorId(id);
-      return response.metodo;
+      return response.paymentMethod;
     },
     {
       revalidateOnFocus: false,

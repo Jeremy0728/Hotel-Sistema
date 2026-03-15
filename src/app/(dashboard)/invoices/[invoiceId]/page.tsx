@@ -7,11 +7,12 @@ interface InvoiceDetailPageProps {
   };
 }
 
-export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
+export default async function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
+ const { invoiceId } = await params;
   return (
     <>
       <DashboardBreadcrumb title="Detalle de factura" text="Factura" />
-      <InvoiceDetail invoiceId={params.invoiceId} />
+      <InvoiceDetail invoiceId={invoiceId} />
     </>
   );
 }
