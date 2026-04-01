@@ -9,6 +9,7 @@ interface UseRoomsOptions {
   limit?: number;
   status?: string;
   floor?: number;
+  room_type_id?: number;
   refreshInterval?: number;
 }
 
@@ -34,23 +35,32 @@ export function useRooms(options: UseRoomsOptions = {}): UseRoomsReturn {
     limit = 10,
     status,
     floor,
+    room_type_id,
     refreshInterval,
   } = options;
 
   // Construir la key para SWR con los parámetros usando useMemo
   const key = useMemo(() => {
     return [
-      `rooms-${page}-${limit}-${status || ''}-${floor || ''}`,
+      `rooms-${page}-${limit}-${status || ''}-${floor !== undefined ? floor : ''}-${room_type_id || ''}`,
       page,
       limit,
       status,
-      floor
+      floor,
+      room_type_id
     ];
-  }, [page, limit, status, floor]);
+  }, [page, limit, status, floor, room_type_id]);
 
   // Fetcher function que llama a la API
-  const fetcher = async ([, page, limit, status]: [string, number, number, string | undefined, number | undefined]) => {
-    const response = await habitacionesApi.traerTodos(page, limit, status);
+  const fetcher = async ([, page, limit, status, floor, room_type_id]: [
+    string, 
+    number, 
+    number, 
+    string | undefined, 
+    number | undefined,
+    number | undefined
+  ]) => {
+    const response = await habitacionesApi.traerTodos(page, limit, status, floor, room_type_id);
     return response;
   };
 

@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,175 +11,67 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useHotelData } from "@/contexts/HotelDataContext";
-
-const DRAFT_KEY = "hotel-reservation-draft";
+import { useRooms } from "@/hooks/useRooms";
+import { useGuests } from "@/hooks/useGuests";
+import { useReservationWizard } from "../hooks/useReservationWizard";
 
 type WizardStep = 1 | 2 | 3 | 4;
 
-interface ReservationDraft {
-  checkIn: string;
-  checkOut: string;
-  adults: number;
-  children: number;
-  roomType: string;
-  roomId: string;
-  roomNumber: string;
-  guestId: string;
-  isNewGuest: boolean;
-  guestFirstName: string;
-  guestLastName: string;
-  guestEmail: string;
-  guestPhone: string;
-  notes: string;
-  discount: number;
-}
-
-const defaultDraft: ReservationDraft = {
-  checkIn: "",
-  checkOut: "",
-  adults: 1,
-  children: 0,
-  roomType: "",
-  roomId: "",
-  roomNumber: "",
-  guestId: "",
-  isNewGuest: false,
-  guestFirstName: "",
-  guestLastName: "",
-  guestEmail: "",
-  guestPhone: "",
-  notes: "",
-  discount: 0,
-};
-
 export default function ReservationWizard() {
-  const router = useRouter();
-  const { rooms, guests, addReservation, addGuest } = useHotelData();
-  const [step, setStep] = useState<WizardStep>(1);
-  const [error, setError] = useState<string | null>(null);
-  const [draft, setDraft] = useState<ReservationDraft>(() => {
-    if (typeof window === "undefined") return defaultDraft;
-    const saved = localStorage.getItem(DRAFT_KEY);
-    if (!saved) return defaultDraft;
-    try {
-      return { ...defaultDraft, ...JSON.parse(saved) } as ReservationDraft;
-    } catch {
-      return defaultDraft;
-    }
-  });
+  // Obtener datos desde hooks
+  const { rooms: apiRooms, isLoading: roomsLoading } = useRooms({ limit: 100 });
+  const { guests: apiGuests, isLoading: guestsLoading } = useGuests({ limit: 100 });
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-    }
-  }, [draft]);
+  // Mapear datos de API al formato esperado por el wizard
+  const rooms = apiRooms.map(room => ({
+    id: room.id,
+    number: room.number,
+    type: room.roomType?.name || 'Standard',
+    floor: room.floor,
+    status: room.status as string,
+    roomType: room.roomType, // Incluir roomType completo con precios
+  }));
 
-  const nights = useMemo(() => {
-    if (!draft.checkIn || !draft.checkOut) return 0;
-    const start = new Date(`${draft.checkIn}T00:00:00`);
-    const end = new Date(`${draft.checkOut}T00:00:00`);
-    const diff = Math.max(0, Math.round((end.getTime() - start.getTime()) / 86400000));
-    return diff;
-  }, [draft.checkIn, draft.checkOut]);
+  const guests = apiGuests.map(guest => ({
+    id: guest.id,
+    nombres: guest.nombres,
+    apellido_paterno: guest.apellido_paterno,
+    apellido_materno: guest.apellido_materno,
+    email: guest.email,
+    phone: guest.phone,
+  }));
 
-  const roomTypes = useMemo(
-    () => Array.from(new Set(rooms.map((room) => room.type))),
-    [rooms]
-  );
-
-  const availableRooms = rooms.filter(
-    (room) =>
-      room.status === "available" &&
-      (draft.roomType ? room.type === draft.roomType : true)
-  );
-
-  const baseRate = draft.roomType === "Suite" ? 320 : draft.roomType === "Doble" ? 220 : 150;
-  const subtotal = nights * baseRate;
-  const discountAmount = subtotal * (draft.discount / 100);
-  const taxable = subtotal - discountAmount;
-  const tax = taxable * 0.18;
-  const total = Math.max(0, Math.round(taxable + tax));
+  // Hook del wizard
+  const {
+    step,
+    error,
+    draft,
+    isSubmitting,
+    nights,
+    roomTypes,
+    availableRooms,
+    subtotal,
+    discountAmount,
+    tax,
+    total,
+    saveDraft,
+    handleNext,
+    handleBack,
+    handleCreateReservation,
+  } = useReservationWizard({ rooms, guests });
 
   const steps = ["Fechas", "Huésped", "Detalles", "Confirmación"];
 
-  const handleNext = () => {
-    if (step === 1) {
-      if (!draft.checkIn || !draft.checkOut || !draft.roomId) {
-        setError("Completa fechas y selecciona una habitación.");
-        return;
-      }
-      setError(null);
-      setStep(2);
-      return;
-    }
-    if (step === 2) {
-      if (draft.isNewGuest) {
-        if (!draft.guestFirstName || !draft.guestLastName) {
-          setError("Completa el nombre del huésped.");
-          return;
-        }
-      } else if (!draft.guestId) {
-        setError("Selecciona un huésped.");
-        return;
-      }
-      setError(null);
-      setStep(3);
-      return;
-    }
-    if (step === 3) {
-      setError(null);
-      setStep(4);
-    }
-  };
-
-  const handleBack = () => {
-    setError(null);
-    setStep((prev) => (prev > 1 ? ((prev - 1) as WizardStep) : prev));
-  };
-
-  const handleCreateReservation = () => {
-    let guestId = draft.guestId;
-    let guestName = "";
-
-    if (draft.isNewGuest) {
-      guestId = `guest-${Date.now()}`;
-      guestName = `${draft.guestFirstName} ${draft.guestLastName}`;
-      addGuest({
-        id: guestId,
-        firstName: draft.guestFirstName,
-        lastName: draft.guestLastName,
-        documentType: "DNI",
-        documentNumber: "00000000",
-        email: draft.guestEmail,
-        phone: draft.guestPhone,
-        nationality: "Peruana",
-      });
-    } else {
-      const guest = guests.find((item) => item.id === draft.guestId);
-      guestName = guest ? `${guest.firstName} ${guest.lastName}` : "";
-    }
-
-    addReservation({
-      guestId,
-      guestName,
-      roomId: draft.roomId,
-      roomNumber: draft.roomNumber,
-      status: "pending",
-      checkIn: draft.checkIn,
-      checkOut: draft.checkOut,
-      nights,
-      total,
-      adults: draft.adults,
-      children: draft.children,
-      notes: draft.notes,
-    });
-
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(DRAFT_KEY);
-    }
-    router.push("/reservations");
-  };
+  if (roomsLoading || guestsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3">
+          <div className="h-8 w-8 animate-spin mx-auto border-4 border-primary border-t-transparent rounded-full" />
+          <p className="text-sm text-neutral-500">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -213,34 +103,46 @@ export default function ReservationWizard() {
         <Card className="p-5 space-y-4">
           <h3 className="text-lg font-semibold">Fechas y habitación</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Input
-              type="date"
-              value={draft.checkIn}
-              onChange={(event) => setDraft({ ...draft, checkIn: event.target.value })}
-            />
-            <Input
-              type="date"
-              value={draft.checkOut}
-              onChange={(event) => setDraft({ ...draft, checkOut: event.target.value })}
-            />
-            <Input
-              type="number"
-              min={1}
-              value={draft.adults}
-              onChange={(event) => setDraft({ ...draft, adults: Number(event.target.value) })}
-              placeholder="Adultos"
-            />
-            <Input
-              type="number"
-              min={0}
-              value={draft.children}
-              onChange={(event) => setDraft({ ...draft, children: Number(event.target.value) })}
-              placeholder="Niños"
-            />
+            <div>
+              <label className="text-sm font-medium mb-1 block">Check-in</label>
+              <Input
+                type="date"
+                value={draft.checkIn}
+                onChange={(event) => saveDraft({ ...draft, checkIn: event.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Check-out</label>
+              <Input
+                type="date"
+                value={draft.checkOut}
+                onChange={(event) => saveDraft({ ...draft, checkOut: event.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Adultos</label>
+              <Input
+                type="number"
+                min={1}
+                value={draft.adults}
+                onChange={(event) => saveDraft({ ...draft, adults: Number(event.target.value) })}
+                placeholder="Adultos"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Niños</label>
+              <Input
+                type="number"
+                min={0}
+                value={draft.children}
+                onChange={(event) => saveDraft({ ...draft, children: Number(event.target.value) })}
+                placeholder="Niños"
+              />
+            </div>
             <Select
               value={draft.roomType}
               onValueChange={(value) =>
-                setDraft({ ...draft, roomType: value, roomId: "", roomNumber: "" })
+                saveDraft({ ...draft, roomType: value, roomId: "", roomNumber: "" })
               }
             >
               <SelectTrigger>
@@ -266,14 +168,14 @@ export default function ReservationWizard() {
                 <Card
                   key={room.id}
                   className={`p-3 border cursor-pointer ${
-                    draft.roomId === room.id
+                    draft.roomId === room.id.toString()
                       ? "border-primary"
                       : "border-neutral-200 dark:border-slate-700"
                   }`}
                   onClick={() =>
-                    setDraft({
+                    saveDraft({
                       ...draft,
-                      roomId: room.id,
+                      roomId: room.id.toString(),
                       roomNumber: room.number,
                     })
                   }
@@ -300,7 +202,7 @@ export default function ReservationWizard() {
           <Select
             value={draft.guestId}
             onValueChange={(value) =>
-              setDraft({ ...draft, guestId: value, isNewGuest: false })
+              saveDraft({ ...draft, guestId: value, isNewGuest: false })
             }
           >
             <SelectTrigger>
@@ -308,8 +210,8 @@ export default function ReservationWizard() {
             </SelectTrigger>
             <SelectContent>
               {guests.map((guest) => (
-                <SelectItem key={guest.id} value={guest.id}>
-                  {guest.firstName} {guest.lastName}
+                <SelectItem key={guest.id} value={guest.id.toString()}>
+                  {guest.nombres} {guest.apellido_paterno}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -320,7 +222,7 @@ export default function ReservationWizard() {
               type="button"
               variant="ghost"
               onClick={() =>
-                setDraft({ ...draft, isNewGuest: !draft.isNewGuest, guestId: "" })
+                saveDraft({ ...draft, isNewGuest: !draft.isNewGuest, guestId: "" })
               }
             >
               {draft.isNewGuest ? "Usar huésped existente" : "Crear nuevo huésped"}
@@ -329,26 +231,38 @@ export default function ReservationWizard() {
 
           {draft.isNewGuest ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Input
-                placeholder="Nombres"
-                value={draft.guestFirstName}
-                onChange={(event) => setDraft({ ...draft, guestFirstName: event.target.value })}
-              />
-              <Input
-                placeholder="Apellidos"
-                value={draft.guestLastName}
-                onChange={(event) => setDraft({ ...draft, guestLastName: event.target.value })}
-              />
-              <Input
-                placeholder="Email"
-                value={draft.guestEmail}
-                onChange={(event) => setDraft({ ...draft, guestEmail: event.target.value })}
-              />
-              <Input
-                placeholder="Teléfono"
-                value={draft.guestPhone}
-                onChange={(event) => setDraft({ ...draft, guestPhone: event.target.value })}
-              />
+              <div>
+                <label className="text-sm font-medium mb-1 block">Nombres</label>
+                <Input
+                  placeholder="Nombres"
+                  value={draft.guestFirstName}
+                  onChange={(event) => saveDraft({ ...draft, guestFirstName: event.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Apellidos</label>
+                <Input
+                  placeholder="Apellidos"
+                  value={draft.guestLastName}
+                  onChange={(event) => saveDraft({ ...draft, guestLastName: event.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Email</label>
+                <Input
+                  placeholder="Email"
+                  value={draft.guestEmail}
+                  onChange={(event) => saveDraft({ ...draft, guestEmail: event.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Teléfono</label>
+                <Input
+                  placeholder="Teléfono"
+                  value={draft.guestPhone}
+                  onChange={(event) => saveDraft({ ...draft, guestPhone: event.target.value })}
+                />
+              </div>
             </div>
           ) : null}
         </Card>
@@ -357,21 +271,27 @@ export default function ReservationWizard() {
       {step === 3 ? (
         <Card className="p-5 space-y-4">
           <h3 className="text-lg font-semibold">Detalles</h3>
-          <Textarea
-            placeholder="Solicitudes especiales o notas internas"
-            value={draft.notes}
-            onChange={(event) => setDraft({ ...draft, notes: event.target.value })}
-          />
-          <Input
-            type="number"
-            min={0}
-            max={50}
-            value={draft.discount}
-            onChange={(event) =>
-              setDraft({ ...draft, discount: Number(event.target.value) })
-            }
-            placeholder="Descuento (%)"
-          />
+          <div>
+            <label className="text-sm font-medium mb-1 block">Notas</label>
+            <Textarea
+              placeholder="Solicitudes especiales o notas internas"
+              value={draft.notes}
+              onChange={(event) => saveDraft({ ...draft, notes: event.target.value })}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Descuento (%)</label>
+            <Input
+              type="number"
+              min={0}
+              max={50}
+              value={draft.discount}
+              onChange={(event) =>
+                saveDraft({ ...draft, discount: Number(event.target.value) })
+              }
+              placeholder="Descuento (%)"
+            />
+          </div>
 
           <Card className="p-4 bg-neutral-50 dark:bg-slate-800">
             <p className="text-sm font-semibold mb-2">Resumen de precios</p>
@@ -410,7 +330,9 @@ export default function ReservationWizard() {
         {step < 4 ? (
           <Button onClick={handleNext}>Siguiente</Button>
         ) : (
-          <Button onClick={handleCreateReservation}>Crear reserva</Button>
+          <Button onClick={handleCreateReservation} disabled={isSubmitting}>
+            {isSubmitting ? "Creando..." : "Crear reserva"}
+          </Button>
         )}
       </div>
     </div>

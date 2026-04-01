@@ -6,9 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import type { RoomStatus } from "@/types/hotel";
-
-type StatusFilter = RoomStatus | "all";
 
 interface FloorSummary {
   floor: number;
@@ -28,14 +25,15 @@ interface StatusCounts {
 }
 
 interface RoomFiltersCardProps {
-  statusFilter: StatusFilter;
-  setStatusFilter: (filter: StatusFilter) => void;
+  statusFilter: string;
+  setStatusFilter: (filter: string) => void;
   search: string;
   setSearch: (search: string) => void;
-  selectedFloor: number;
-  setSelectedFloor: (floor: number) => void;
+  selectedFloor: number | "all";
+  setSelectedFloor: (floor: number | "all") => void;
   floorSummaries: FloorSummary[];
   counts: StatusCounts;
+  refreshRooms: () => void;
 }
 
 export default function RoomFiltersCard({
@@ -136,6 +134,21 @@ export default function RoomFiltersCard({
       />
 
       <div className="flex gap-2 overflow-x-auto pb-2">
+        <button
+          key="all"
+          type="button"
+          onClick={() => setSelectedFloor("all")}
+          className={`min-w-[170px] rounded-lg border px-3 py-2 text-left transition ${
+            selectedFloor === "all"
+              ? "border-primary bg-primary/10"
+              : "border-neutral-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+          }`}
+        >
+          <p className="text-sm font-semibold">Todos los pisos</p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-300">
+            Total: {counts.all}
+          </p>
+        </button>
         {floorSummaries.map((summary) => (
           <button
             key={summary.floor}

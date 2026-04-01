@@ -129,7 +129,7 @@ export function useReservationOperations({
 
     setIsUpdating(true);
     try {
-      await reservasApi.confirmar(reservationId);
+      await reservasApi.cambiarEstado(reservationId, 'confirmed');
       toast.success('Reserva confirmada exitosamente');
       onSuccess?.();
     } catch (error) {
@@ -146,7 +146,7 @@ export function useReservationOperations({
 
     setIsUpdating(true);
     try {
-      await reservasApi.cancelar(reservationId);
+      await reservasApi.cambiarEstado(reservationId, 'cancelled');
       toast.success('Reserva cancelada exitosamente');
       onSuccess?.();
     } catch (error) {

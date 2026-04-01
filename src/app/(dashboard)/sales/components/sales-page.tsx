@@ -11,6 +11,7 @@ import SalesTableRow from "./sales-table-row";
 export default function SalesPage() {
   // Obtener datos desde hooks individuales
   const { sales: apiSales, isLoading: salesLoading } = useSales({ limit: 100 });
+  console.log("🚀 ~ SalesPage ~ apiSales:", apiSales)
 
   // Hook de operaciones de ventas
   const {

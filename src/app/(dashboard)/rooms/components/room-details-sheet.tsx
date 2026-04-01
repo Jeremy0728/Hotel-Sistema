@@ -40,6 +40,8 @@ export default function RoomDetailsSheet({
 
   if (!selectedSnapshot) return null;
 
+  const isOccupied = selectedSnapshot.room.status === "occupied";
+
   const selectedReservation =
     selectedSnapshot.activeReservation ??
     selectedSnapshot.arrivalReservation ??
@@ -154,9 +156,19 @@ export default function RoomDetailsSheet({
                   <p className="text-sm font-semibold">Estado operativo</p>
                   <StatusBadge type="room" status={selectedSnapshot.room.status} />
                 </div>
+                
+                {isOccupied && (
+                  <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md p-3">
+                    <p className="text-xs text-amber-800 dark:text-amber-200">
+                      <strong>Habitación ocupada:</strong> Los cambios de estado solo pueden realizarse desde el check-out en la pantalla de reservas.
+                    </p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     size="sm"
+                    disabled={isOccupied}
                     onClick={() =>
                       updateRoom(selectedSnapshot.room.id, { status: "available" })
                     }
@@ -166,6 +178,7 @@ export default function RoomDetailsSheet({
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={isOccupied}
                     onClick={() =>
                       updateRoom(selectedSnapshot.room.id, { status: "cleaning" })
                     }
@@ -175,6 +188,7 @@ export default function RoomDetailsSheet({
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={isOccupied}
                     onClick={() =>
                       updateRoom(selectedSnapshot.room.id, { status: "maintenance" })
                     }
@@ -184,6 +198,7 @@ export default function RoomDetailsSheet({
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={isOccupied}
                     onClick={() =>
                       updateRoom(selectedSnapshot.room.id, { status: "out_of_service" })
                     }

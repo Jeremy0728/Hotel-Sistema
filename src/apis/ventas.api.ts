@@ -1,70 +1,65 @@
 import { apiGet, apiPost, apiPut, apiPatch } from "@/lib/api/apiWrapper";
-
-interface Venta {
-  id: number;
-  sale_number: string;
-  sale_date: string;
-  customer_id?: number;
-  reservation_id?: number;
-  location_id: number;
-  subtotal: string;
-  tax: string;
-  discount?: string;
-  total: string;
-  payment_method_id: number;
-  status: "completed" | "cancelled" | "pending";
-  notes?: string;
-  sold_by: number;
-}
-
-interface ResponseVentas {
-  ok: boolean;
-  ventas: Venta[];
-  total: number;
-  page: number;
-  totalPages: number;
-}
+import type {
+  Sale,
+  SalesResponse,
+  SaleResponse,
+  SaleMutationResponse,
+  PaymentStatus,
+} from "@/types/sale";
 
 export const ventasApi = {
   // GET /api/ventas/traer-todos
-  traerTodos: async (page = 1, limit = 10, filters?: Record<string, string>): Promise<ResponseVentas> => {
-    const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value);
-      });
-    }
-    return await apiGet<ResponseVentas>(`/ventas/traer-todos?${params}`);
+  traerTodos: async (
+    page = 1,
+    limit = 10,
+    payment_status?: PaymentStatus,
+    location_id?: number,
+    reservation_id?: number,
+    guest_id?: number,
+    from_date?: string,
+    to_date?: string
+  ): Promise<SalesResponse> => {
+    const params = new URLSearchParams({ 
+      page: page.toString(), 
+      limit: limit.toString() 
+    });
+    if (payment_status) params.append('payment_status', payment_status);
+    if (location_id) params.append('location_id', location_id.toString());
+    if (reservation_id) params.append('reservation_id', reservation_id.toString());
+    if (guest_id) params.append('guest_id', guest_id.toString());
+    if (from_date) params.append('from_date', from_date);
+    if (to_date) params.append('to_date', to_date);
+    return await apiGet<SalesResponse>(`/ventas/traer-todos?${params}`);
   },
 
   // GET /api/ventas/traer-por-id/:id
-  traerPorId: async (id: number): Promise<{ ok: boolean; venta: Venta }> => {
+  traerPorId: async (id: number): Promise<SaleResponse> => {
     return await apiGet(`/ventas/traer-por-id/${id}`);
   },
 
   // POST /api/ventas/crear
-  crear: async (data: Omit<Venta, "id" | "sale_number">): Promise<{ ok: boolean; venta: Venta }> => {
+  crear: async (data: Omit<Sale, "id" | "sale_number" | "created_at">): Promise<SaleMutationResponse> => {
     return await apiPost("/ventas/crear", data);
   },
 
   // PUT /api/ventas/actualizar/:id
-  actualizar: async (id: number, data: Partial<Venta>): Promise<{ ok: boolean; venta: Venta }> => {
+  actualizar: async (id: number, data: Partial<Sale>): Promise<SaleMutationResponse> => {
     return await apiPut(`/ventas/actualizar/${id}`, data);
   },
 
   // PATCH /api/ventas/cancelar/:id
-  cancelar: async (id: number, reason?: string): Promise<{ ok: boolean; venta: Venta }> => {
+  cancelar: async (id: number, reason?: string): Promise<SaleMutationResponse> => {
     return await apiPatch(`/ventas/cancelar/${id}`, { reason });
   },
 
   // GET /api/ventas/por-fecha
-  obtenerPorFecha: async (startDate: string, endDate: string): Promise<{ ok: boolean; ventas: Venta[] }> => {
+  obtenerPorFecha: async (startDate: string, endDate: string): Promise<{ ok: boolean; sales: Sale[] }> => {
     const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
     return await apiGet(`/ventas/por-fecha?${params}`);
   },
 
   // GET /api/ventas/por-reserva/:reservationId
-  obtenerPorReserva: async (reservationId: number): Promise<{ ok: boolean; ventas: Venta[] }> => {
+  obtenerPorReserva: async (reservationId: number): Promise<{ ok: boolean; sales: Sale[] }> => {
     return await apiGet(`/ventas/por-reserva/${reservationId}`);
   },
 

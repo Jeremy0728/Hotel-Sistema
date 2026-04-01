@@ -1312,7 +1312,7 @@ Base URL: `/api/habitaciones`
 
 **Endpoint:** `GET /api/habitaciones/traer-todos`
 
-**Descripción:** Obtiene lista de habitaciones del hotel. Soporta filtrado por status.
+**Descripción:** Obtiene lista de habitaciones del hotel. Soporta filtrado por status, tipo de habitación y piso.
 
 **Headers:**
 ```json
@@ -1325,8 +1325,10 @@ Base URL: `/api/habitaciones`
 
 **Query Parameters (opcionales):**
 - `page`: Número de página (default: 1)
-- `limit`: Registros por página (default: 10)
-- `status`: Filtrar por estado (`available`, `occupied`, `maintenance`)
+- `limit`: Registros por página (default: 10, max: 100)
+- `status`: Filtrar por estado (`available`, `occupied`, `maintenance`, `cleaning`)
+- `room_type_id`: Filtrar por tipo de habitación (integer)
+- `floor`: Filtrar por piso (integer, mínimo: 0)
 
 **Campos Adicionales en la Respuesta:**
 - `type`: Nombre del tipo de habitación (extraído de `roomType.name`)
@@ -1335,9 +1337,11 @@ Base URL: `/api/habitaciones`
   - Datos de la reserva (código, fechas, estado, adultos, niños, monto)
   - Si no hay reserva activa, este campo es `null`
 
-**Ejemplo:**
+**Ejemplos:**
 ```
 GET /api/habitaciones/traer-todos?status=available&page=1&limit=20
+GET /api/habitaciones/traer-todos?room_type_id=1&floor=2
+GET /api/habitaciones/traer-todos?status=occupied&room_type_id=3
 ```
 
 **Respuesta Exitosa (200):**
@@ -1361,7 +1365,21 @@ GET /api/habitaciones/traer-todos?status=available&page=1&limit=20
         "id": 1,
         "name": "Doble",
         "description": "Habitación doble estándar",
-        "max_occupancy": 2
+        "max_occupancy": 2,
+        "prices": [
+          {
+            "id": 1,
+            "price_type": "daily",
+            "price": "150000.00",
+            "is_active": true
+          },
+          {
+            "id": 2,
+            "price_type": "hourly",
+            "price": "25000.00",
+            "is_active": true
+          }
+        ]
       }
     },
     {
@@ -1388,7 +1406,21 @@ GET /api/habitaciones/traer-todos?status=available&page=1&limit=20
         "id": 1,
         "name": "Doble",
         "description": "Habitación doble estándar",
-        "max_occupancy": 2
+        "max_occupancy": 2,
+        "prices": [
+          {
+            "id": 1,
+            "price_type": "daily",
+            "price": "150000.00",
+            "is_active": true
+          },
+          {
+            "id": 2,
+            "price_type": "hourly",
+            "price": "25000.00",
+            "is_active": true
+          }
+        ]
       }
     }
   ],
@@ -1428,7 +1460,22 @@ GET /api/habitaciones/traer-todos?status=available&page=1&limit=20
     "roomType": {
       "id": 1,
       "name": "Doble",
-      "max_occupancy": 2
+      "description": "Habitación doble estándar",
+      "max_occupancy": 2,
+      "prices": [
+        {
+          "id": 1,
+          "price_type": "daily",
+          "price": "150000.00",
+          "is_active": true
+        },
+        {
+          "id": 2,
+          "price_type": "hourly",
+          "price": "25000.00",
+          "is_active": true
+        }
+      ]
     }
   }
 }
@@ -1456,11 +1503,11 @@ GET /api/habitaciones/traer-todos?status=available&page=1&limit=20
 ```
 
 **Validaciones:**
-- `number`: Requerido, string, máximo 10 caracteres, único por hotel
-- `room_type_id`: Requerido, integer, debe existir en room_types
-- `floor`: Opcional, integer positivo
-- `status`: Opcional, valores permitidos: `'available'`, `'occupied'`, `'cleaning'`, `'maintenance'`, `'out_of_order'` (default: `'available'`)
-- `notes`: Opcional, texto
+- `number`: Requerido, string, máximo 20 caracteres, único por hotel
+- `room_type_id`: Opcional, integer, debe existir en room_types
+- `floor`: Opcional, integer (mínimo: 0)
+- `status`: Opcional, valores permitidos: `'available'`, `'occupied'`, `'cleaning'`, `'maintenance'` (default: `'available'`)
+- `notes`: Opcional, texto (máximo 500 caracteres)
 
 **Respuesta Exitosa (201):**
 ```json
@@ -1502,10 +1549,11 @@ GET /api/habitaciones/traer-todos?status=available&page=1&limit=20
 ```
 
 **Validaciones:**
-- `number`: String, máximo 10 caracteres, único
-- `room_type_id`: Integer, debe existir
-- `floor`: Integer positivo
-- `notes`: Texto
+- `number`: String, máximo 20 caracteres, único
+- `room_type_id`: Integer, debe existir en room_types
+- `floor`: Integer (mínimo: 0)
+- `status`: Valores permitidos: `'available'`, `'occupied'`, `'cleaning'`, `'maintenance'`
+- `notes`: Texto (máximo 500 caracteres)
 
 **Respuesta Exitosa (200):**
 ```json
@@ -1543,7 +1591,7 @@ GET /api/habitaciones/traer-todos?status=available&page=1&limit=20
 ```
 
 **Validaciones:**
-- `status`: Requerido, valores permitidos: `'available'`, `'occupied'`, `'cleaning'`, `'maintenance'`, `'out_of_order'`
+- `status`: Requerido, valores permitidos: `'available'`, `'occupied'`, `'cleaning'`, `'maintenance'`
 
 **Respuesta Exitosa (200):**
 ```json
@@ -2372,7 +2420,7 @@ Base URL: `/api/reservas`
 
 ### 3. Crear Reserva
 
-**Endpoint:** `POST /api/reservas`
+**Endpoint:** `POST /api/reservas/crear`
 
 **Descripción:** Crea una nueva reserva.
 

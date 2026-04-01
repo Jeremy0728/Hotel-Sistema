@@ -7,21 +7,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { PaymentStatus } from "@/types/sale";
 
-type SaleStatus = "completed" | "cancelled" | "pending";
-
-const statusOptions: { value: SaleStatus | "all"; label: string }[] = [
+const statusOptions: { value: PaymentStatus | "all"; label: string }[] = [
   { value: "all", label: "Todas" },
-  { value: "completed", label: "Completada" },
+  { value: "paid", label: "Pagada" },
   { value: "pending", label: "Pendiente" },
-  { value: "cancelled", label: "Cancelada" },
+  { value: "refunded", label: "Reembolsada" },
 ];
 
 interface SalesFiltersCardProps {
   search: string;
   setSearch: (value: string) => void;
-  statusFilter: SaleStatus | "all";
-  setStatusFilter: (value: SaleStatus | "all") => void;
+  statusFilter: PaymentStatus | "all";
+  setStatusFilter: (value: PaymentStatus | "all") => void;
 }
 
 export default function SalesFiltersCard({
@@ -48,7 +47,7 @@ export default function SalesFiltersCard({
         />
         <Select
           value={statusFilter}
-          onValueChange={(value) => setStatusFilter(value as SaleStatus | "all")}
+          onValueChange={(value) => setStatusFilter(value as PaymentStatus | "all")}
         >
           <SelectTrigger>
             <SelectValue placeholder="Estado" />

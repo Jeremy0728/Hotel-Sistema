@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { LoaderCircle, AlertCircle } from "lucide-react";
 import EmptyState from "@/components/hotel/empty-state";
 import { Button } from "@/components/ui/button";
@@ -15,19 +16,41 @@ import RoomDetailsSheet from "./room-details-sheet";
 import RoomOpsTile from "./room-ops-tile";
 
 export default function RoomsPage() {
+  // Estados locales para filtros
+  const [selectedFloor, setSelectedFloor] = useState<number | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
+
   // Obtener datos desde hooks individuales
   const { reservations } = useReservations({ limit: 100 });
   const { invoices } = useInvoices({ limit: 100 });
   const { settings: hotelSettings } = useHotelSettings();
 
+  // Cargar TODAS las habitaciones para calcular contadores correctamente
   const {
-    rooms: apiRooms,
-    isLoading: roomsLoading,
+    rooms: allRooms,
+    isLoading: allRoomsLoading,
+    isError: allRoomsError,
+  } = useRooms({ 
+    limit: 100,
+  });
+
+  // Cargar habitaciones filtradas para mostrar en el grid
+  const {
+    rooms: filteredRooms,
+    isLoading: filteredRoomsLoading,
     isError: roomsError,
     error: roomsErrorData,
     refreshRooms,
     updateRoomStatus,
-  } = useRooms({ limit: 100 });
+  } = useRooms({ 
+    limit: 100,
+    status: statusFilter !== "all" ? statusFilter : undefined,
+    floor: selectedFloor !== "all" ? selectedFloor : undefined,
+  });
+
+  // Usar todas las habitaciones para contadores, habitaciones filtradas para el grid
+  const apiRooms = filteredRooms;
 
   // Transformar habitaciones de API a formato local
   const transformedRooms = apiRooms.map((room) => ({
@@ -84,13 +107,17 @@ export default function RoomsPage() {
     console.log("Check-out:", reservationId);
   };
 
+  // Transformar TODAS las habitaciones para contadores
+  const transformedAllRooms = allRooms.map((room) => ({
+    id: String(room.id),
+    number: room.number,
+    type: room.roomType?.name || "Standard",
+    floor: room.floor,
+    status: room.status,
+    notes: room.notes,
+  }));
+
   const {
-    selectedFloor,
-    setSelectedFloor,
-    search,
-    setSearch,
-    statusFilter,
-    setStatusFilter,
     selectedRoomId,
     drawerNotes,
     setDrawerNotes,
@@ -103,14 +130,19 @@ export default function RoomsPage() {
     closeRoomDetails,
   } = useRoomOperations({
     rooms: transformedRooms,
+    allRooms: transformedAllRooms,
     reservations: transformedReservations,
     invoices,
     completeCheckIn,
     completeCheckOut,
     updateRoom,
+    selectedFloor,
+    statusFilter,
+    search,
   });
 
-  if (roomsLoading) {
+  // Solo mostrar loading inicial si es la primera carga
+  if (allRoomsLoading && allRooms.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-3">
@@ -121,7 +153,7 @@ export default function RoomsPage() {
     );
   }
 
-  if (roomsError) {
+  if (allRoomsError || roomsError) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Card className="p-6 max-w-md">
@@ -151,9 +183,17 @@ export default function RoomsPage() {
         setSelectedFloor={setSelectedFloor}
         floorSummaries={floorSummaries}
         counts={counts}
+        refreshRooms={refreshRooms}
       />
 
-      {roomsByFloor.length === 0 ? (
+      {filteredRoomsLoading ? (
+        <div className="flex items-center justify-center min-h-[300px]">
+          <div className="text-center space-y-3">
+            <LoaderCircle className="h-6 w-6 animate-spin mx-auto text-primary" />
+            <p className="text-xs text-neutral-500">Actualizando...</p>
+          </div>
+        </div>
+      ) : roomsByFloor.length === 0 ? (
         <EmptyState
           title="Sin habitaciones para mostrar"
           description="Ajusta piso, estado o busqueda para continuar."

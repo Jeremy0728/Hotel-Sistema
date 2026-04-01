@@ -43,11 +43,11 @@ export default function ReservationsPage() {
         id: String(res.id),
         code: res.confirmation_code,
         guestId: String(res.guest_id),
-        guestName: res.huesped
-          ? `${res.huesped.nombres} ${res.huesped.apellido_paterno}`
+        guestName: res.guest
+          ? `${res.guest.nombres} ${res.guest.apellido_paterno} ${res.guest.apellido_materno}`
           : "Huésped",
         roomId: String(res.room_id),
-        roomNumber: res.habitacion?.number || String(res.room_id),
+        roomNumber: res.room?.number || String(res.room_id),
         status: (res.status === "checked_in" ? "checkin" :
                  res.status === "checked_out" ? "checkout" :
                  res.status) as ReservationStatus,

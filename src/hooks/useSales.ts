@@ -1,42 +1,41 @@
 import useSWR from 'swr';
 import { ventasApi } from '@/apis/ventas.api';
+import type {
+  Sale,
+  UseSalesOptions,
+  UseSalesReturn,
+  UseSaleReturn,
+} from '@/types/sale';
 
-export interface Sale {
-  id: number;
-  sale_number: string;
-  sale_date: string;
-  customer_id?: number;
-  reservation_id?: number;
-  location_id: number;
-  subtotal: string;
-  tax: string;
-  discount?: string;
-  total: string;
-  payment_method_id: number;
-  status: 'completed' | 'cancelled' | 'pending';
-  notes?: string;
-  sold_by: number;
-}
+// Re-exportar Sale para compatibilidad con código existente
+export type { Sale };
 
-interface UseSalesOptions {
-  page?: number;
-  limit?: number;
-  filters?: Record<string, string>;
-}
-
-export function useSales(options: UseSalesOptions = {}) {
-  const { page = 1, limit = 100, filters } = options;
+export function useSales(options: UseSalesOptions = {}): UseSalesReturn {
+  const {
+    page = 1,
+    limit = 100,
+    payment_status,
+    location_id,
+    reservation_id,
+    guest_id,
+    from_date,
+    to_date,
+  } = options;
 
   const { data, error, isLoading, mutate } = useSWR(
-    ['sales', page, limit, filters],
+    ['sales', page, limit, payment_status, location_id, reservation_id, guest_id, from_date, to_date],
     async () => {
-      const response = await ventasApi.traerTodos(page, limit, filters);
-      return {
-        sales: response.ventas || [],
-        total: response.total,
-        page: response.page,
-        totalPages: response.totalPages,
-      };
+      const response = await ventasApi.traerTodos(
+        page,
+        limit,
+        payment_status,
+        location_id,
+        reservation_id,
+        guest_id,
+        from_date,
+        to_date
+      );
+      return response;
     },
     {
       revalidateOnFocus: false,
@@ -48,8 +47,8 @@ export function useSales(options: UseSalesOptions = {}) {
 
   return {
     sales: data?.sales || [],
-    total: data?.total || 0,
-    page: data?.page || 1,
+    totalCount: data?.totalCount || 0,
+    currentPage: data?.currentPage || 1,
     totalPages: data?.totalPages || 1,
     isLoading,
     isError: !!error,
@@ -58,12 +57,12 @@ export function useSales(options: UseSalesOptions = {}) {
   };
 }
 
-export function useSale(id: number) {
+export function useSale(id: number): UseSaleReturn {
   const { data, error, isLoading, mutate } = useSWR(
     id ? ['sale', id] : null,
     async () => {
       const response = await ventasApi.traerPorId(id);
-      return response.venta;
+      return response.sale;
     },
     {
       revalidateOnFocus: false,

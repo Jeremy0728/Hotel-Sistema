@@ -12,6 +12,16 @@ export type RoomStatus =
   | 'out_of_service';
 
 /**
+ * Precio de tipo de habitación
+ */
+export interface RoomTypePrice {
+  id: number;
+  price_type: 'daily' | 'hourly' | 'weekly' | 'monthly';
+  price: string;
+  is_active: boolean;
+}
+
+/**
  * Tipo de habitación (información básica)
  */
 export interface RoomType {
@@ -19,6 +29,7 @@ export interface RoomType {
   name: string;
   description?: string;
   max_occupancy: number;
+  prices?: RoomTypePrice[];
 }
 
 /**

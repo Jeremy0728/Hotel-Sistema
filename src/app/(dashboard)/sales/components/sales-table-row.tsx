@@ -3,48 +3,47 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-
-type SaleStatus = "completed" | "cancelled" | "pending";
-
-interface Sale {
-  id: number;
-  sale_number: string;
-  sale_date: string;
-  customer_id?: number;
-  total: string;
-  payment_method_id: number;
-  status: SaleStatus;
-}
+import type { Sale, PaymentStatus } from "@/types/sale";
 
 interface SalesTableRowProps {
   sale: Sale;
 }
 
-const statusClasses: Record<SaleStatus, string> = {
-  completed: "bg-emerald-100 text-emerald-700",
+const statusClasses: Record<PaymentStatus, string> = {
+  paid: "bg-emerald-100 text-emerald-700",
   pending: "bg-yellow-100 text-yellow-700",
-  cancelled: "bg-neutral-200 text-neutral-700",
+  refunded: "bg-neutral-200 text-neutral-700",
 };
 
-const statusLabels: Record<SaleStatus, string> = {
-  completed: "Completada",
+const statusLabels: Record<PaymentStatus, string> = {
+  paid: "Pagada",
   pending: "Pendiente",
-  cancelled: "Cancelada",
+  refunded: "Reembolsada",
 };
 
 export default function SalesTableRow({ sale }: SalesTableRowProps) {
-  const total = parseFloat(sale.total);
+  const total = typeof sale.total_amount === 'string' 
+    ? parseFloat(sale.total_amount) 
+    : sale.total_amount;
+  
+  const guestName = sale.guest && sale.guest.nombres && sale.guest.apellido_paterno
+    ? `${sale.guest.nombres} ${sale.guest.apellido_paterno} ${sale.guest.apellido_materno || ''}`.trim()
+    : sale.guest_id 
+    ? `Huésped #${sale.guest_id}`
+    : 'Sin huésped';
+  
+  const saleDate = new Date(sale.created_at).toLocaleDateString('es-PE');
 
   return (
     <TableRow>
       <TableCell className="font-medium">{sale.sale_number}</TableCell>
-      <TableCell>{sale.sale_date}</TableCell>
-      <TableCell>Cliente #{sale.customer_id || "-"}</TableCell>
+      <TableCell>{saleDate}</TableCell>
+      <TableCell>{guestName}</TableCell>
       <TableCell>S/ {total.toFixed(2)}</TableCell>
-      <TableCell>Método #{sale.payment_method_id}</TableCell>
+      <TableCell>{sale.payment_method}</TableCell>
       <TableCell>
-        <Badge className={cn("rounded-full", statusClasses[sale.status])}>
-          {statusLabels[sale.status]}
+        <Badge className={cn("rounded-full", statusClasses[sale.payment_status])}>
+          {statusLabels[sale.payment_status]}
         </Badge>
       </TableCell>
       <TableCell>

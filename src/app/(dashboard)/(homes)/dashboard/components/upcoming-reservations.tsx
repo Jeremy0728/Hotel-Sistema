@@ -17,26 +17,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useHotelData } from "@/contexts/HotelDataContext";
 import StatusBadge from "@/components/hotel/status-badge";
 import { MoreHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
+import dayjs from "dayjs";
+import type { Reservation } from "@/types/hotel";
 
-function formatDate(dateStr: string) {
-  const date = new Date(`${dateStr}T00:00:00`);
-  return new Intl.DateTimeFormat("es-PE", {
-    day: "2-digit",
-    month: "short",
-  }).format(date);
+interface UpcomingReservationsProps {
+  reservations: Reservation[];
+  onCheckIn: (reservationId: string) => void;
+  onCancelReservation: (reservationId: string) => void;
 }
 
-export default function UpcomingReservations() {
-  const { reservations, updateReservation, completeCheckIn } = useHotelData();
+function formatDate(dateStr: string) {
+  return dayjs(dateStr).format("DD MMM");
+}
+
+export default function UpcomingReservations({
+  reservations,
+  onCheckIn,
+  onCancelReservation,
+}: UpcomingReservationsProps) {
   const router = useRouter();
-  const todayStr = new Date().toISOString().split("T")[0];
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split("T")[0];
+  const todayStr = dayjs().format("YYYY-MM-DD");
+  const tomorrowStr = dayjs().add(1, 'day').format("YYYY-MM-DD");
 
   const upcoming = reservations
     .filter((reservation) =>
@@ -105,13 +109,13 @@ export default function UpcomingReservations() {
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={() => completeCheckIn(reservation.id)}
+                        onClick={() => onCheckIn(reservation.id)}
                         disabled={reservation.status !== "confirmed"}
                       >
                         Check-in
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => updateReservation(reservation.id, { status: "cancelled" })}
+                        onClick={() => onCancelReservation(reservation.id)}
                         disabled={reservation.status === "cancelled"}
                       >
                         Cancelar
@@ -170,13 +174,13 @@ export default function UpcomingReservations() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => completeCheckIn(reservation.id)}
+                    onClick={() => onCheckIn(reservation.id)}
                     disabled={reservation.status !== "confirmed"}
                   >
                     Check-in
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => updateReservation(reservation.id, { status: "cancelled" })}
+                    onClick={() => onCancelReservation(reservation.id)}
                     disabled={reservation.status === "cancelled"}
                   >
                     Cancelar

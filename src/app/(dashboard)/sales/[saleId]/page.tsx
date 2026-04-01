@@ -5,11 +5,12 @@ interface SaleDetailRouteProps {
   params: { saleId: string };
 }
 
-export default function SaleDetailRoute({ params }: SaleDetailRouteProps) {
+export default async function SaleDetailRoute({ params }: SaleDetailRouteProps) {
+  const { saleId } = await params;
   return (
     <>
       <DashboardBreadcrumb title="Detalle de venta" text="Ventas" />
-      <SaleDetail saleId={params.saleId} />
+      <SaleDetail saleId={saleId} />
     </>
   );
 }

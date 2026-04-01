@@ -1,65 +1,94 @@
 import { useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import type { Invoice, Reservation, Room, RoomStatus, RoomSnapshot } from "@/types/hotel";
-
-type StatusFilter = RoomStatus | "all";
-
-const validRoomStatuses = new Set<RoomStatus>([
-  "available",
-  "occupied",
-  "cleaning",
-  "maintenance",
-  "out_of_service",
-]);
+import { useRouter } from "next/navigation";
+import type { Invoice, Reservation, Room, RoomSnapshot } from "@/types/hotel";
 
 interface UseRoomOperationsProps {
   rooms: Room[];
+  allRooms: Room[];
   reservations: Reservation[];
   invoices: Invoice[];
   completeCheckIn: (reservationId: string) => void;
   completeCheckOut: (reservationId: string) => void;
   updateRoom: (roomId: string, updates: Partial<Room>) => void;
+  selectedFloor: number | "all";
+  search: string;
 }
 
 export function useRoomOperations({
   rooms,
+  allRooms,
   reservations,
   invoices,
   completeCheckIn,
   completeCheckOut,
   updateRoom,
+  selectedFloor,
+  search,
 }: UseRoomOperationsProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const today = useMemo(() => new Date().toISOString().split("T")[0], []);
   
+  // Usar allRooms para calcular pisos y contadores
   const floors = useMemo(
-    () => Array.from(new Set(rooms.map((room) => room.floor))).sort((a, b) => a - b),
-    [rooms]
+    () => Array.from(new Set(allRooms.map((room) => room.floor))).sort((a, b) => a - b),
+    [allRooms]
   );
 
-  // Parse URL params
-  const statusParam = searchParams.get("status");
-  const floorParam = searchParams.get("floor");
-  const initialStatusFilter: StatusFilter =
-    statusParam && validRoomStatuses.has(statusParam as RoomStatus)
-      ? (statusParam as RoomStatus)
-      : "all";
-  const parsedFloor = floorParam ? Number(floorParam) : NaN;
-  const initialSelectedFloor =
-    !Number.isNaN(parsedFloor) && floors.includes(parsedFloor)
-      ? parsedFloor
-      : (floors[0] ?? 1);
-
-  // Local state
-  const [selectedFloor, setSelectedFloor] = useState<number>(initialSelectedFloor);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialStatusFilter);
+  // Local state solo para el drawer
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [drawerNotes, setDrawerNotes] = useState("");
 
-  // Compute snapshots
+  // Compute snapshots para todas las habitaciones (para contadores)
+  const allSnapshots = useMemo<RoomSnapshot[]>(() => {
+    return allRooms.map((room) => {
+      const roomReservations = reservations
+        .filter((reservation) => reservation.roomId == room.id)
+        .sort((a, b) => b.checkIn.localeCompare(a.checkIn));
+
+      const activeReservation = roomReservations.find(
+        (reservation) => reservation.status === "checkin"
+      );
+      const arrivalReservation = roomReservations.find(
+        (reservation) =>
+          (reservation.status === "confirmed" || reservation.status === "pending") &&
+          reservation.checkIn === today
+      );
+      const departureReservation = roomReservations.find(
+        (reservation) => reservation.status === "checkin" && reservation.checkOut === today
+      );
+
+      const reservationCodes = new Set(roomReservations.map((reservation) => reservation.confirmation_code));
+
+      const pendingInvoice = invoices.find((invoice) => {
+        const matchCode = invoice.reservationCode
+          ? reservationCodes.has(invoice.reservationCode)
+          : false;
+        return (
+          matchCode &&
+          invoice.balance > 0 &&
+          invoice.status !== "paid" &&
+          invoice.status !== "cancelled"
+        );
+      });
+
+      const hasAlert =
+        room.status === "maintenance" || room.status === "out_of_service";
+
+      return {
+        room,
+        roomReservations,
+        activeReservation,
+        arrivalReservation,
+        departureReservation,
+        pendingInvoice,
+        hasPendingPayment: Boolean(pendingInvoice),
+        hasAlert,
+      };
+    });
+  }, [allRooms, reservations, invoices, today]);
+
+  // Compute snapshots para habitaciones filtradas (para mostrar)
   const snapshots = useMemo<RoomSnapshot[]>(() => {
     return rooms.map((room) => {
       const roomReservations = reservations
@@ -79,17 +108,13 @@ export function useRoomOperations({
       );
 
       const reservationCodes = new Set(roomReservations.map((reservation) => reservation.confirmation_code));
-      const reservationGuests = new Set(
-        roomReservations.map((reservation) => reservation.guestName.toLowerCase())
-      );
 
       const pendingInvoice = invoices.find((invoice) => {
         const matchCode = invoice.reservationCode
           ? reservationCodes.has(invoice.reservationCode)
           : false;
-        const matchGuest = reservationGuests.has(invoice.guest?.nombres.toLowerCase() || "");
         return (
-          (matchCode || matchGuest) &&
+          matchCode &&
           invoice.balance > 0 &&
           invoice.status !== "paid" &&
           invoice.status !== "cancelled"
@@ -112,10 +137,10 @@ export function useRoomOperations({
     });
   }, [rooms, reservations, invoices, today]);
 
-  // Floor summaries
+  // Floor summaries usando TODAS las habitaciones
   const floorSummaries = useMemo(() => {
     return floors.map((floor) => {
-      const floorRooms = snapshots.filter((snapshot) => snapshot.room.floor === floor);
+      const floorRooms = allSnapshots.filter((snapshot) => snapshot.room.floor === floor);
       return {
         floor,
         total: floorRooms.length,
@@ -124,18 +149,21 @@ export function useRoomOperations({
         cleaning: floorRooms.filter((snapshot) => snapshot.room.status === "cleaning").length,
       };
     });
-  }, [floors, snapshots]);
+  }, [floors, allSnapshots]);
 
-  // Filtered rooms by floor and guest name
+  // Filtered rooms by floor and guest name (solo filtro local de búsqueda)
   const roomsByFloor = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return snapshots
-      .filter((snapshot) => snapshot.room.floor === selectedFloor)
-      .filter((snapshot) => {
-        if (statusFilter !== "all" && snapshot.room.status !== statusFilter) return false;
+    let filtered = snapshots;
 
-        if (!query) return true;
+    // Filtrar por piso si no es "all"
+    if (selectedFloor !== "all") {
+      filtered = filtered.filter((snapshot) => snapshot.room.floor === selectedFloor);
+    }
 
+    // Filtro local de búsqueda por nombre de habitación o huésped
+    if (query) {
+      filtered = filtered.filter((snapshot) => {
         const matchesRoom =
           snapshot.room.number.toLowerCase().includes(query) ||
           snapshot.room.type.toLowerCase().includes(query);
@@ -146,11 +174,13 @@ export function useRoomOperations({
         ].some((name) => name?.toLowerCase().includes(query));
 
         return matchesRoom || matchesGuest;
-      })
-      .sort((a, b) =>
-        a.room.number.localeCompare(b.room.number, undefined, { numeric: true })
-      );
-  }, [snapshots, selectedFloor, search, statusFilter]);
+      });
+    }
+
+    return filtered.sort((a, b) =>
+      a.room.number.localeCompare(b.room.number, undefined, { numeric: true })
+    );
+  }, [snapshots, selectedFloor, search]);
 
   // Selected snapshot
   const selectedSnapshot = useMemo(
@@ -162,21 +192,29 @@ export function useRoomOperations({
   );
 
   // Current floor summary
-  const currentFloorSummary = floorSummaries.find(
-    (summary) => summary.floor === selectedFloor
-  );
+  const currentFloorSummary = selectedFloor !== "all" 
+    ? floorSummaries.find((summary) => summary.floor === selectedFloor)
+    : null;
 
   const currentFloorSnapshots = useMemo(
-    () => snapshots.filter((snapshot) => snapshot.room.floor === selectedFloor),
-    [snapshots, selectedFloor]
+    () => selectedFloor !== "all" 
+      ? allSnapshots.filter((snapshot) => snapshot.room.floor === selectedFloor)
+      : allSnapshots,
+    [allSnapshots, selectedFloor]
   );
 
-  // Status counts
+  // Status counts usando TODAS las habitaciones
   const counts = {
-    all: currentFloorSummary?.total ?? 0,
-    available: currentFloorSummary?.available ?? 0,
-    occupied: currentFloorSummary?.occupied ?? 0,
-    cleaning: currentFloorSummary?.cleaning ?? 0,
+    all: selectedFloor !== "all" ? (currentFloorSummary?.total ?? 0) : allSnapshots.length,
+    available: selectedFloor !== "all" 
+      ? (currentFloorSummary?.available ?? 0)
+      : allSnapshots.filter((s) => s.room.status === "available").length,
+    occupied: selectedFloor !== "all"
+      ? (currentFloorSummary?.occupied ?? 0)
+      : allSnapshots.filter((s) => s.room.status === "occupied").length,
+    cleaning: selectedFloor !== "all"
+      ? (currentFloorSummary?.cleaning ?? 0)
+      : allSnapshots.filter((s) => s.room.status === "cleaning").length,
     maintenance: currentFloorSnapshots.filter(
       (snapshot) => snapshot.room.status === "maintenance"
     ).length,
@@ -243,12 +281,6 @@ export function useRoomOperations({
 
   return {
     // State
-    selectedFloor,
-    setSelectedFloor,
-    search,
-    setSearch,
-    statusFilter,
-    setStatusFilter,
     selectedRoomId,
     drawerNotes,
     setDrawerNotes,

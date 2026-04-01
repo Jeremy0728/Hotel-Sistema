@@ -13,9 +13,17 @@ import type {
 
 export const habitacionesApi = {
   // GET /api/habitaciones/traer-todos
-  traerTodos: async (page = 1, limit = 10, status?: RoomStatus): Promise<RoomsResponse> => {
+  traerTodos: async (
+    page = 1, 
+    limit = 10, 
+    status?: RoomStatus, 
+    floor?: number, 
+    room_type_id?: number
+  ): Promise<RoomsResponse> => {
     const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
     if (status) params.append("status", status);
+    if (floor !== undefined) params.append("floor", floor.toString());
+    if (room_type_id) params.append("room_type_id", room_type_id.toString());
     return await apiGet<RoomsResponse>(`/habitaciones/traer-todos?${params}`);
   },
 
